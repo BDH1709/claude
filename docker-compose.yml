@@ -1,0 +1,18 @@
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bdh1709-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PRIVATE_PASSWORD=${PRIVATE_PASSWORD}
+      - NODE_ENV=production
+      - HOST_PROC=/host/proc
+      - HOST_SYS=/host/sys
+    volumes:
+      - ./workspace/data:/workspace/data
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
