@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Globe, EyeOff } from "lucide-react";
 import { PublishState } from "@/types";
-import clsx from "clsx";
 
 interface PublishToggleProps {
   section: keyof PublishState;
@@ -22,9 +21,7 @@ export function PublishToggle({ section, initialState }: PublishToggleProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [section]: !published }),
       });
-      if (res.ok) {
-        setPublished(!published);
-      }
+      if (res.ok) setPublished(!published);
     } finally {
       setLoading(false);
     }
@@ -34,25 +31,15 @@ export function PublishToggle({ section, initialState }: PublishToggleProps) {
     <button
       onClick={toggle}
       disabled={loading}
-      className={clsx(
-        "flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border transition-all",
+      className="flex items-center gap-2 font-mono text-xs px-3 py-1.5 rounded border transition-all"
+      style={
         published
-          ? "border-accent-green text-accent-green hover:bg-accent-green hover:text-bg-primary"
-          : "border-border text-text-muted hover:border-text-secondary hover:text-text-secondary"
-      )}
-      title={published ? "Click to make private" : "Click to publish publicly"}
+          ? { borderColor: "#f77f00", color: "#f77f00" }
+          : { borderColor: "#1e2d3d", color: "#768390" }
+      }
     >
-      {published ? (
-        <>
-          <Globe className="w-3 h-3" />
-          Published
-        </>
-      ) : (
-        <>
-          <EyeOff className="w-3 h-3" />
-          Private
-        </>
-      )}
+      {published ? <Globe className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+      {published ? "Published" : "Private"}
     </button>
   );
 }

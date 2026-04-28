@@ -5,19 +5,18 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
+  --bg-primary: #060d14;
+  --bg-secondary: #0d1520;
   --accent-blue: #58a6ff;
-  --accent-green: #3fb950;
-  --border: #30363d;
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
+  --accent-orange: #f77f00;
+  --border: #1e2d3d;
+  --text-primary: #cdd9e5;
+  --text-secondary: #768390;
+  --glow-blue: rgba(88, 166, 255, 0.35);
+  --glow-orange: rgba(247, 127, 0, 0.35);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   background-color: var(--bg-primary);
@@ -25,67 +24,120 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #1e2d3d; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #2d4a6e; }
+
+/* ── JARVIS card corners ── */
+.jarvis-card {
+  position: relative;
+  border: 1px solid rgba(88, 166, 255, 0.15);
+  background: rgba(13, 21, 32, 0.85);
+  backdrop-filter: blur(8px);
+}
+.jarvis-card::before, .jarvis-card::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+}
+.jarvis-card::before {
+  top: -1px; left: -1px;
+  border-top: 2px solid var(--accent-blue);
+  border-left: 2px solid var(--accent-blue);
+}
+.jarvis-card::after {
+  bottom: -1px; right: -1px;
+  border-bottom: 2px solid var(--accent-blue);
+  border-right: 2px solid var(--accent-blue);
 }
 
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+.jarvis-card-orange::before { border-color: var(--accent-orange); }
+.jarvis-card-orange::after  { border-color: var(--accent-orange); }
+
+/* ── Glow effects ── */
+.glow-blue  { box-shadow: 0 0 15px var(--glow-blue),  0 0 30px rgba(88,166,255,0.1); }
+.glow-orange{ box-shadow: 0 0 15px var(--glow-orange), 0 0 30px rgba(247,127,0,0.1); }
+.text-glow-blue   { text-shadow: 0 0 15px rgba(88,166,255,0.6); }
+.text-glow-orange { text-shadow: 0 0 15px rgba(247,127,0,0.6); }
+
+/* ── Scan line ── */
+.scan-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1000; overflow: hidden;
+}
+.scan-overlay::after {
+  content: '';
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(transparent, rgba(88,166,255,0.08), transparent);
+  animation: scan-line 6s linear infinite;
+}
+@keyframes scan-line {
+  0%   { top: -2px; }
+  100% { top: 100vh; }
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
+/* ── Grid background ── */
+.hex-grid {
+  background-image:
+    linear-gradient(rgba(88,166,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88,166,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+/* ── Animated border ── */
+.border-animate { animation: border-flow 3s ease-in-out infinite; }
+@keyframes border-flow {
+  0%,100% { border-color: rgba(88,166,255,0.2); }
+  50%      { border-color: rgba(88,166,255,0.6); }
 }
 
-.font-mono {
-  font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+/* ── Status dot ── */
+.status-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  animation: blink 1.5s step-end infinite;
+}
+.status-dot.online  { background: #58a6ff; box-shadow: 0 0 6px rgba(88,166,255,0.8); }
+.status-dot.warning { background: #f77f00; box-shadow: 0 0 6px rgba(247,127,0,0.8); }
+.status-dot.offline { background: #f85149; box-shadow: 0 0 6px rgba(248,81,73,0.8); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── Page animations ── */
+.animate-fade-in-up  { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; }
+.animate-delay-100   { animation-delay: 0.1s; }
+.animate-delay-200   { animation-delay: 0.2s; }
+.animate-delay-300   { animation-delay: 0.3s; }
+.animate-delay-400   { animation-delay: 0.4s; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Markdown prose styles */
+/* ── Markdown prose ── */
 .prose-dark h1, .prose-dark h2, .prose-dark h3 {
-  color: #e6edf3;
-  border-bottom: 1px solid #30363d;
-  padding-bottom: 0.3em;
-  margin-top: 1.5em;
+  color: #cdd9e5; border-bottom: 1px solid #1e2d3d; padding-bottom: 0.3em; margin-top: 1.5em;
 }
-
-.prose-dark p { color: #c9d1d9; line-height: 1.7; }
+.prose-dark p { color: #adbac7; line-height: 1.7; }
 .prose-dark code {
-  background: #161b22;
-  border: 1px solid #30363d;
-  padding: 0.1em 0.4em;
-  border-radius: 3px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85em;
+  background: #0d1520; border: 1px solid #1e2d3d; padding: 0.1em 0.4em;
+  border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em;
 }
 .prose-dark pre {
-  background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 6px;
-  padding: 1em;
-  overflow-x: auto;
+  background: #0d1520; border: 1px solid #1e2d3d; border-radius: 6px;
+  padding: 1em; overflow-x: auto;
 }
 .prose-dark pre code { background: none; border: none; padding: 0; }
-.prose-dark ul, .prose-dark ol { color: #c9d1d9; padding-left: 1.5em; }
+.prose-dark ul, .prose-dark ol { color: #adbac7; padding-left: 1.5em; }
 .prose-dark li { margin: 0.25em 0; }
 .prose-dark a { color: #58a6ff; text-decoration: underline; }
 .prose-dark blockquote {
-  border-left: 3px solid #30363d;
-  padding-left: 1em;
-  color: #8b949e;
-  margin: 1em 0;
+  border-left: 3px solid #1e2d3d; padding-left: 1em; color: #768390; margin: 1em 0;
 }
-.prose-dark hr { border-color: #30363d; margin: 1.5em 0; }
+.prose-dark hr { border-color: #1e2d3d; margin: 1.5em 0; }
 .prose-dark table { width: 100%; border-collapse: collapse; }
-.prose-dark th, .prose-dark td {
-  border: 1px solid #30363d;
-  padding: 0.5em 0.75em;
-  text-align: left;
-}
-.prose-dark th { background: #161b22; color: #e6edf3; }
+.prose-dark th, .prose-dark td { border: 1px solid #1e2d3d; padding: 0.5em 0.75em; text-align: left; }
+.prose-dark th { background: #0d1520; color: #cdd9e5; }

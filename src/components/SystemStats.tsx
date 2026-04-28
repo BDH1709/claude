@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Cpu, HardDrive, MemoryStick, Clock, Thermometer, Activity } from "lucide-react";
+import { Clock, Cpu, HardDrive, MemoryStick, Thermometer, Activity } from "lucide-react";
 import { SystemStats } from "@/types";
-import clsx from "clsx";
+import { CircularGauge } from "@/components/CircularGauge";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -13,55 +13,32 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
-function formatUptime(seconds: number): string {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
+function formatUptime(s: number): string {
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
   if (d > 0) return `${d}d ${h}h ${m}m`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
 
-function UsageBar({ value, warn = 70, danger = 90 }: { value: number; warn?: number; danger?: number }) {
-  const color =
-    value >= danger
-      ? "bg-accent-red"
-      : value >= warn
-      ? "bg-accent-orange"
-      : "bg-accent-green";
+function DetailCard({ icon: Icon, label, primary, secondary, accent = "#58a6ff" }: {
+  icon: React.ElementType; label: string; primary: string; secondary?: string; accent?: string;
+}) {
   return (
-    <div className="h-1.5 w-full bg-bg-tertiary rounded-full overflow-hidden">
+    <div className="jarvis-card rounded-lg p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
+        <span className="font-mono text-xs text-text-muted uppercase tracking-widest">{label}</span>
+      </div>
       <div
-        className={clsx("h-full rounded-full transition-all duration-500", color)}
-        style={{ width: `${Math.min(100, value)}%` }}
-      />
-    </div>
-  );
-}
-
-interface StatCardProps {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  sub?: string;
-  percent?: number;
-  accent?: string;
-}
-
-function StatCard({ icon: Icon, label, value, sub, percent, accent = "text-accent-blue" }: StatCardProps) {
-  return (
-    <div className="bg-bg-secondary border border-border rounded-lg p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <Icon className={clsx("w-4 h-4", accent)} />
-        <span className="text-xs font-mono text-text-muted uppercase tracking-wider">{label}</span>
+        className="font-mono text-xl font-bold"
+        style={{ color: accent, textShadow: `0 0 10px ${accent}55` }}
+      >
+        {primary}
       </div>
-      <div>
-        <div className="font-mono text-2xl font-bold text-text-primary">{value}</div>
-        {sub && <div className="text-xs text-text-muted mt-0.5">{sub}</div>}
-      </div>
-      {percent !== undefined && <UsageBar value={percent} />}
-      {percent !== undefined && (
-        <div className="text-xs font-mono text-text-muted">{percent}% used</div>
+      {secondary && (
+        <div className="font-mono text-xs text-text-muted mt-1">{secondary}</div>
       )}
     </div>
   );
@@ -76,101 +53,120 @@ export function SystemStatsPanel() {
     try {
       const res = await fetch("/api/system", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed");
-      const data: SystemStats = await res.json();
-      setStats(data);
+      setStats(await res.json());
       setLastUpdated(new Date());
       setError("");
     } catch {
-      setError("Failed to fetch system stats");
+      setError("Failed to read system stats — check /proc and /sys mounts");
     }
   }, []);
 
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 5000);
-    return () => clearInterval(interval);
+    const id = setInterval(fetchStats, 5000);
+    return () => clearInterval(id);
   }, [fetchStats]);
 
   if (error) {
     return (
-      <div className="bg-bg-secondary border border-accent-red border-opacity-30 rounded-lg p-6 text-center">
-        <p className="text-accent-red font-mono text-sm">{error}</p>
-        <p className="text-text-muted text-xs mt-2">Check that /proc and /sys are accessible</p>
+      <div className="jarvis-card rounded-lg p-6 text-center">
+        <p className="font-mono text-sm text-accent-red">{error}</p>
       </div>
     );
   }
 
-  if (!stats) {
-    return (
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="bg-bg-secondary border border-border rounded-lg p-4 h-28 animate-pulse" />
-        ))}
-      </div>
-    );
-  }
+  const tempColor = stats?.temperature
+    ? stats.temperature > 75 ? "#f85149" : stats.temperature > 60 ? "#f77f00" : "#58a6ff"
+    : "#768390";
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          icon={Cpu}
-          label="CPU"
-          value={`${stats.cpu.usage}%`}
-          sub={`${stats.cpu.cores} cores · ${stats.cpu.model.split(" ").slice(0, 3).join(" ")}`}
-          percent={stats.cpu.usage}
-          accent="text-accent-blue"
-        />
-        <StatCard
-          icon={MemoryStick}
-          label="Memory"
-          value={formatBytes(stats.memory.used)}
-          sub={`of ${formatBytes(stats.memory.total)}`}
-          percent={stats.memory.usagePercent}
-          accent="text-accent-purple"
-        />
-        <StatCard
-          icon={HardDrive}
-          label="Disk"
-          value={formatBytes(stats.disk.used)}
-          sub={`of ${formatBytes(stats.disk.total)} on ${stats.disk.mountpoint}`}
-          percent={stats.disk.usagePercent}
-          accent="text-accent-orange"
-        />
-        <StatCard
-          icon={Clock}
-          label="Uptime"
-          value={formatUptime(stats.uptime)}
-          sub="system uptime"
-          accent="text-accent-green"
-        />
-        <StatCard
-          icon={Thermometer}
-          label="Temperature"
-          value={stats.temperature !== null ? `${stats.temperature.toFixed(1)}°C` : "N/A"}
-          sub={stats.temperature !== null ? (stats.temperature > 70 ? "⚠ Hot" : stats.temperature > 55 ? "Warm" : "Normal") : "Sensor unavailable"}
-          accent={
-            stats.temperature === null
-              ? "text-text-muted"
-              : stats.temperature > 70
-              ? "text-accent-red"
-              : stats.temperature > 55
-              ? "text-accent-orange"
-              : "text-accent-green"
-          }
-        />
-        <StatCard
-          icon={Activity}
-          label="Load Avg"
-          value={stats.loadAvg[0].toFixed(2)}
-          sub={`5m: ${stats.loadAvg[1].toFixed(2)} · 15m: ${stats.loadAvg[2].toFixed(2)}`}
-          accent="text-accent-blue"
-        />
+    <div className="space-y-6">
+      {/* Circular gauges row */}
+      <div className="jarvis-card rounded-lg p-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 place-items-center">
+          {stats ? (
+            <>
+              <CircularGauge value={stats.cpu.usage}            label="CPU"   size={130} />
+              <CircularGauge value={stats.memory.usagePercent}  label="RAM"   size={130} />
+              <CircularGauge value={stats.disk.usagePercent}    label="DISK"  size={130} />
+              <CircularGauge
+                value={stats.temperature !== null ? Math.min(100, (stats.temperature / 90) * 100) : 0}
+                label="TEMP"
+                displayValue={stats.temperature !== null ? `${stats.temperature.toFixed(1)}°` : "N/A"}
+                color={tempColor}
+                size={130}
+              />
+            </>
+          ) : (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="w-[130px] h-[130px] rounded-full border-2 border-border animate-pulse" />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Detail cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {stats ? (
+          <>
+            <DetailCard
+              icon={Clock}
+              label="Uptime"
+              primary={formatUptime(stats.uptime)}
+              accent="#58a6ff"
+            />
+            <DetailCard
+              icon={Activity}
+              label="Load avg"
+              primary={stats.loadAvg[0].toFixed(2)}
+              secondary={`5m: ${stats.loadAvg[1].toFixed(2)} · 15m: ${stats.loadAvg[2].toFixed(2)}`}
+              accent="#f77f00"
+            />
+            <DetailCard
+              icon={Thermometer}
+              label="Temperature"
+              primary={stats.temperature !== null ? `${stats.temperature.toFixed(1)}°C` : "N/A"}
+              secondary={
+                stats.temperature !== null
+                  ? stats.temperature > 75 ? "⚠ Running hot"
+                  : stats.temperature > 60 ? "Warm"
+                  : "Normal"
+                  : "Sensor unavailable"
+              }
+              accent={tempColor}
+            />
+            <DetailCard
+              icon={MemoryStick}
+              label="Memory"
+              primary={formatBytes(stats.memory.used)}
+              secondary={`${stats.memory.usagePercent}% of ${formatBytes(stats.memory.total)}`}
+              accent="#bc8cff"
+            />
+            <DetailCard
+              icon={HardDrive}
+              label="Disk"
+              primary={formatBytes(stats.disk.used)}
+              secondary={`${stats.disk.usagePercent}% of ${formatBytes(stats.disk.total)}`}
+              accent="#f77f00"
+            />
+            <DetailCard
+              icon={Cpu}
+              label="Processor"
+              primary={`${stats.cpu.cores} cores`}
+              secondary={stats.cpu.model.split(" ").slice(0, 4).join(" ")}
+              accent="#58a6ff"
+            />
+          </>
+        ) : (
+          [...Array(6)].map((_, i) => (
+            <div key={i} className="jarvis-card rounded-lg p-4 h-24 animate-pulse" />
+          ))
+        )}
       </div>
 
       {lastUpdated && (
-        <p className="text-xs font-mono text-text-muted text-right">
-          Updated {lastUpdated.toLocaleTimeString()} · auto-refreshes every 5s
+        <p className="font-mono text-xs text-text-muted text-right">
+          Updated {lastUpdated.toLocaleTimeString()} · live every 5s
         </p>
       )}
     </div>
