@@ -1,0 +1,20 @@
+{
+  "name": "ptcg-meta-tracker",
+  "version": "1.0.0",
+  "description": "Pokemon TCG meta tracker and deck manager",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "cd client && npm install && npm run build",
+    "setup": "npm install && npm run build",
+    "client:dev": "cd client && npm run dev"
+  },
+  "dependencies": {
+    "axios": "^1.16.0",
+    "better-sqlite3": "^9.6.0",
+    "cors": "^2.8.6",
+    "express": "^4.22.1",
+    "node-cron": "^3.0.3"
+  }
+}
