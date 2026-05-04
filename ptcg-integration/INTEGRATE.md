@@ -34,18 +34,20 @@ Environment=PTCG_API_KEY=your-key-here
 
 ---
 
-## 2. Frontend — copy page files
+## 2. Frontend — copy files
 
 ```powershell
-copy frontend\src\pages\PTCGMeta.tsx       D:\...\bdh1709\src\pages\
-copy frontend\src\pages\PTCGDecks.tsx      D:\...\bdh1709\src\pages\
+# Pages
+copy frontend\src\pages\PTCGMeta.tsx        D:\...\bdh1709\src\pages\
+copy frontend\src\pages\PTCGDecks.tsx       D:\...\bdh1709\src\pages\
 copy frontend\src\pages\PTCGTournaments.tsx D:\...\bdh1709\src\pages\
-copy frontend\src\pages\PTCGCatchUp.tsx    D:\...\bdh1709\src\pages\
-```
+copy frontend\src\pages\PTCGCatchUp.tsx     D:\...\bdh1709\src\pages\
 
-Copy the API client additions into `src/lib/api.ts` (or a new `src/lib/ptcg.ts`):
-```powershell
-copy frontend\src\lib\ptcg.ts D:\...\bdh1709\src\lib\ptcg.ts
+# Sub-nav component (tab bar inside PTCG pages)
+copy frontend\src\components\PTCGNav.tsx    D:\...\bdh1709\src\components\
+
+# API client
+copy frontend\src\lib\ptcg.ts              D:\...\bdh1709\src\lib\ptcg.ts
 ```
 
 ---
@@ -72,30 +74,28 @@ Add routes inside your `<Routes>` block:
 
 ---
 
-## 4. Add nav items to `src/components/Sidebar.tsx`
+## 4. Add ONE nav entry to `src/components/Sidebar.tsx`
 
-Find your existing `navItems` array and add a PTCG section. Exact format depends
-on your sidebar — add these entries with the other nav items:
+The sub-navigation (Meta / My Decks / Tournaments / Catch Up) is built into the
+pages themselves as a tab bar — so the sidebar only needs a single PTCG entry:
 
 ```tsx
-// PTCG section
-{ path: '/ptcg',             label: 'Meta',        icon: 'trending_up',   group: 'PTCG' },
-{ path: '/ptcg/decks',       label: 'My Decks',    icon: 'style',         group: 'PTCG' },
-{ path: '/ptcg/tournaments', label: 'Tournaments', icon: 'emoji_events',  group: 'PTCG' },
-{ path: '/ptcg/catchup',     label: 'Catch Up',    icon: 'update',        group: 'PTCG' },
+{ path: '/ptcg', label: 'PTCG', icon: 'style', group: 'PTCG' },
 ```
 
 ---
 
 ## 5. Add to `src/components/TopBar.tsx`
 
-Same nav items as Sidebar — add them alongside your existing nav links.
+Same — one entry:
+
+```tsx
+{ path: '/ptcg', label: 'PTCG', icon: 'style' },
+```
 
 ---
 
 ## 6. Add to `src/components/MobileBottomNav.tsx`
-
-Add a single PTCG entry (bottom nav is space-limited):
 
 ```tsx
 { path: '/ptcg', label: 'PTCG', icon: 'style' },

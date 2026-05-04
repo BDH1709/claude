@@ -4,6 +4,7 @@ import TopBar from '../components/TopBar'
 import Sidebar from '../components/Sidebar'
 import MobileBottomNav from '../components/MobileBottomNav'
 import AnimateIn from '../components/AnimateIn'
+import PTCGNav from '../components/PTCGNav'
 import { staggerContainer, staggerItem } from '../animations'
 import { getPTCGCatchUp, refreshPTCGMeta, PTCGCatchUpResponse, PTCGArchetype, PTCGChange } from '../lib/ptcg'
 
@@ -178,6 +179,7 @@ export default function PTCGCatchUp() {
       <TopBar showNav />
       <Sidebar variant="below-topbar" />
       <main className="ml-0 md:ml-64 pt-16 min-h-screen" role="main">
+        <PTCGNav />
         <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
           {/* Header */}
