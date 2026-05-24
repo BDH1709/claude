@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sociogram – Docentenpaneel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <a href="/" class="logo">
+        <div class="logo-icon">◎</div>
+        Sociogram
+      </a>
+      <button class="btn btn-primary" id="btn-new-sociogram">
+        + Nieuw sociogram
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main style="padding: 2rem 0 4rem;">
+  <div class="container">
+
+    <!-- Hero -->
+    <div style="margin-bottom:2rem;">
+      <h1 style="margin-bottom:.4rem;">Docentenpaneel</h1>
+      <p>Maak en beheer sociogrammen voor uw klassen. Bekijk sociale relaties en analyseer groepsdynamiek.</p>
+    </div>
+
+    <!-- Sociogram list -->
+    <div id="sociogram-list">
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+        <span>Laden…</span>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- MODAL: Nieuw sociogram -->
+<div id="modal-new" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modal-new-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-new-title">Nieuw sociogram aanmaken</h3>
+      <button class="modal-close" id="modal-new-close" aria-label="Sluiten">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-new-sociogram" novalidate>
+
+        <div class="form-group">
+          <label for="sg-title">Titel van het sociogram</label>
+          <input type="text" id="sg-title" placeholder="bijv. Vriendschapsmeting groep 5A" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sg-class">Klasnaam</label>
+            <input type="text" id="sg-class" placeholder="bijv. 5A" required />
+          </div>
+          <div class="form-group">
+            <label for="sg-max-pos">Max. positieve keuzes</label>
+            <input type="number" id="sg-max-pos" value="3" min="1" max="10" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sg-allow-neg" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+              <input type="checkbox" id="sg-allow-neg" checked style="width:auto;" />
+              Negatieve keuzes toestaan
+            </label>
+            <p class="form-hint">Leerlingen kunnen ook aangeven wie ze liever vermijden</p>
+          </div>
+          <div class="form-group" id="neg-count-group">
+            <label for="sg-max-neg">Max. negatieve keuzes</label>
+            <input type="number" id="sg-max-neg" value="1" min="1" max="5" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sg-students">Leerlingen <span class="text-muted">(één per regel)</span></label>
+          <textarea id="sg-students" placeholder="Anna de Vries&#10;Bas Jansen&#10;Caro Smit&#10;David Bakker&#10;…" rows="8" required></textarea>
+          <p class="form-hint" id="student-count-hint">Voer de namen in van alle leerlingen in de klas.</p>
+        </div>
+
+        <div id="form-error" class="alert alert-danger" style="display:none;"></div>
+
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" id="modal-new-cancel">Annuleren</button>
+      <button type="button" class="btn btn-primary" id="form-submit">Sociogram aanmaken</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Deellink -->
+<div id="modal-share" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modal-share-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-share-title">Sociogram aangemaakt!</h3>
+      <button class="modal-close" id="modal-share-close" aria-label="Sluiten">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-success">
+        Gelukt! Deel de onderstaande link met uw leerlingen.
+      </div>
+      <div class="form-group">
+        <label>Leerlingenlink</label>
+        <div class="flex gap-1" style="align-items:stretch;">
+          <input type="text" id="share-link-input" readonly style="border-radius:var(--radius) 0 0 var(--radius);flex:1;" />
+          <button class="btn btn-secondary copy-btn" id="copy-link-btn" style="border-radius:0 var(--radius) var(--radius) 0;min-width:90px;">
+            Kopiëren
+          </button>
+        </div>
+        <p class="form-hint">Leerlingen openen deze link en vullen het sociogram in.</p>
+      </div>
+      <div class="form-group">
+        <label>Resultaten bekijken</label>
+        <div class="flex gap-1" style="align-items:stretch;">
+          <input type="text" id="results-link-input" readonly style="border-radius:var(--radius) 0 0 var(--radius);flex:1;" />
+          <button class="btn btn-outline copy-btn" id="copy-results-btn" style="border-radius:0 var(--radius) var(--radius) 0;min-width:90px;">
+            Kopiëren
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" id="modal-share-close2">Sluiten</button>
+      <a class="btn btn-primary" id="goto-results-btn" href="#" target="_blank">Resultaten bekijken →</a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Bevestiging verwijderen -->
+<div id="modal-delete" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3>Sociogram verwijderen?</h3>
+      <button class="modal-close" id="modal-delete-close">×</button>
+    </div>
+    <div class="modal-body">
+      <p>Weet u zeker dat u dit sociogram en alle bijbehorende gegevens wilt verwijderen? Dit kan niet ongedaan worden gemaakt.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="modal-delete-cancel">Annuleren</button>
+      <button class="btn btn-danger" id="modal-delete-confirm">Verwijderen</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+/* =========================================================
+   Teacher Dashboard – Vanilla JS
+   ========================================================= */
+
+const $ = id => document.getElementById(id);
+let deleteToken = null;
+
+// ---- Toast ----
+function showToast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  $('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ---- Modal helpers ----
+function openModal(id) {
+  $(id).style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  $(id).style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// ---- Load sociograms ----
+async function loadSociograms() {
+  const container = $('sociogram-list');
+  try {
+    const res = await fetch('/api/sociograms');
+    const list = await res.json();
+
+    if (!list.length) {
+      container.innerHTML = `
+        <div class="empty-state card">
+          <div class="empty-state-icon">◎</div>
+          <h3>Nog geen sociogrammen</h3>
+          <p style="margin:.5rem 0 1.5rem;">Klik op "+ Nieuw sociogram" om te beginnen.</p>
+          <button class="btn btn-primary" onclick="openModal('modal-new')">+ Nieuw sociogram</button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        ${list.map(sg => renderSociogramCard(sg)).join('')}
+      </div>`;
+  } catch(e) {
+    container.innerHTML = `<div class="alert alert-danger">Fout bij laden: ${e.message}</div>`;
+  }
+}
+
+function renderSociogramCard(sg) {
+  const pct = sg.student_count ? Math.round(sg.response_count / sg.student_count * 100) : 0;
+  const date = new Date(sg.created_at).toLocaleDateString('nl-NL', { day:'numeric', month:'short', year:'numeric' });
+  const studentLink = `${location.origin}/student.html?token=${sg.token}`;
+  const resultsLink = `${location.origin}/results.html?token=${sg.token}`;
+
+  return `
+    <div class="card" data-token="${sg.token}">
+      <div class="card-header">
+        <div style="min-width:0;">
+          <div class="flex items-center gap-1" style="flex-wrap:wrap;margin-bottom:.3rem;">
+            <h3 style="margin:0;">${escHtml(sg.title)}</h3>
+            <span class="badge badge-primary">${escHtml(sg.class_name)}</span>
+          </div>
+          <span class="text-muted">Aangemaakt op ${date} · Code: <strong>${sg.token}</strong></span>
+        </div>
+        <div class="flex gap-1" style="flex-shrink:0;flex-wrap:wrap;">
+          <a href="${resultsLink}" class="btn btn-secondary btn-sm" target="_blank">Resultaten</a>
+          <button class="btn btn-outline btn-sm copy-share-btn" data-link="${studentLink}">Link kopiëren</button>
+          <button class="btn btn-outline btn-sm btn-icon delete-btn" data-token="${sg.token}" title="Verwijderen" aria-label="Verwijderen">🗑</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding-top:1rem;padding-bottom:1rem;">
+        <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div class="flex justify-between" style="margin-bottom:.35rem;font-size:.85rem;">
+              <span class="text-muted">Ingevuld</span>
+              <strong>${sg.response_count} / ${sg.student_count} leerlingen (${pct}%)</strong>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width:${pct}%;background:${pct===100?'var(--success)':'var(--primary)'}"></div>
+            </div>
+          </div>
+          <div class="flex gap-1" style="flex-shrink:0;">
+            <span class="badge badge-neutral">${sg.student_count} leerlingen</span>
+            ${sg.allow_negative ? '<span class="badge badge-warning">Neg. keuzes aan</span>' : ''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ---- Event delegation for cards ----
+$('sociogram-list').addEventListener('click', e => {
+  const copyBtn = e.target.closest('.copy-share-btn');
+  if (copyBtn) {
+    copyToClipboard(copyBtn.dataset.link);
+    return;
+  }
+  const delBtn = e.target.closest('.delete-btn');
+  if (delBtn) {
+    deleteToken = delBtn.dataset.token;
+    openModal('modal-delete');
+  }
+});
+
+// ---- New sociogram button ----
+$('btn-new-sociogram').addEventListener('click', () => openModal('modal-new'));
+$('modal-new-close').addEventListener('click', () => closeModal('modal-new'));
+$('modal-new-cancel').addEventListener('click', () => closeModal('modal-new'));
+
+// ---- Toggle negative count field ----
+$('sg-allow-neg').addEventListener('change', function() {
+  $('neg-count-group').style.display = this.checked ? '' : 'none';
+});
+
+// ---- Live student count ----
+$('sg-students').addEventListener('input', function() {
+  const names = this.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  $('student-count-hint').textContent = names.length
+    ? `${names.length} leerling${names.length===1?'':'en} ingevoerd.`
+    : 'Voer de namen in van alle leerlingen in de klas.';
+});
+
+// ---- Create sociogram ----
+$('form-submit').addEventListener('click', async () => {
+  const title = $('sg-title').value.trim();
+  const class_name = $('sg-class').value.trim();
+  const max_positive = parseInt($('sg-max-pos').value) || 3;
+  const max_negative = parseInt($('sg-max-neg').value) || 1;
+  const allow_negative = $('sg-allow-neg').checked;
+  const studentText = $('sg-students').value;
+  const students = studentText.split('\n').map(s=>s.trim()).filter(Boolean);
+
+  const errEl = $('form-error');
+  errEl.style.display = 'none';
+
+  if (!title || !class_name || students.length < 2) {
+    errEl.textContent = 'Vul de titel, klasnaam en minimaal 2 leerlingnamen in.';
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  const btn = $('form-submit');
+  btn.textContent = 'Bezig…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/sociograms', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ title, class_name, students, max_positive, max_negative, allow_negative })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Onbekende fout');
+
+    closeModal('modal-new');
+    resetNewForm();
+
+    // Show share modal
+    const studentLink = `${location.origin}/student.html?token=${data.token}`;
+    const resultsLink = `${location.origin}/results.html?token=${data.token}`;
+    $('share-link-input').value = studentLink;
+    $('results-link-input').value = resultsLink;
+    $('goto-results-btn').href = resultsLink;
+    openModal('modal-share');
+    loadSociograms();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'flex';
+  } finally {
+    btn.textContent = 'Sociogram aanmaken';
+    btn.disabled = false;
+  }
+});
+
+function resetNewForm() {
+  $('sg-title').value = '';
+  $('sg-class').value = '';
+  $('sg-max-pos').value = '3';
+  $('sg-max-neg').value = '1';
+  $('sg-allow-neg').checked = true;
+  $('sg-students').value = '';
+  $('form-error').style.display = 'none';
+  $('student-count-hint').textContent = 'Voer de namen in van alle leerlingen in de klas.';
+  $('neg-count-group').style.display = '';
+}
+
+// ---- Share modal ----
+$('modal-share-close').addEventListener('click', () => closeModal('modal-share'));
+$('modal-share-close2').addEventListener('click', () => closeModal('modal-share'));
+$('copy-link-btn').addEventListener('click', () => copyToClipboard($('share-link-input').value, 'copy-link-btn'));
+$('copy-results-btn').addEventListener('click', () => copyToClipboard($('results-link-input').value, 'copy-results-btn'));
+
+// ---- Delete modal ----
+$('modal-delete-close').addEventListener('click', () => closeModal('modal-delete'));
+$('modal-delete-cancel').addEventListener('click', () => closeModal('modal-delete'));
+$('modal-delete-confirm').addEventListener('click', async () => {
+  if (!deleteToken) return;
+  try {
+    await fetch(`/api/sociograms/${deleteToken}`, { method: 'DELETE' });
+    closeModal('modal-delete');
+    showToast('Sociogram verwijderd.', 'success');
+    loadSociograms();
+  } catch(e) {
+    showToast('Verwijderen mislukt.', 'error');
+  }
+  deleteToken = null;
+});
+
+// ---- Close modals on backdrop click ----
+document.querySelectorAll('.modal-backdrop').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (e.target === this) closeModal(this.id);
+  });
+});
+
+// ---- Copy to clipboard ----
+function copyToClipboard(text, btnId) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Link gekopieerd!', 'success');
+    if (btnId) {
+      const btn = $(btnId);
+      const orig = btn.textContent;
+      btn.textContent = '✓ Gekopieerd';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+    }
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    showToast('Link gekopieerd!', 'success');
+  });
+}
+
+// ---- Init ----
+loadSociograms();
+
+// Auto-refresh every 30 seconds
+setInterval(loadSociograms, 30000);
+</script>
+</body>
+</html>

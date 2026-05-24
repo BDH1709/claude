@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sociogram – Leerlingenformulier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <a href="/" class="logo">
+        <div class="logo-icon">◎</div>
+        Sociogram
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- LOADING -->
+<div id="view-loading">
+  <div class="loading-overlay">
+    <div class="spinner"></div>
+    <span>Laden…</span>
+  </div>
+</div>
+
+<!-- ERROR -->
+<div id="view-error" style="display:none;padding:3rem 1rem;">
+  <div class="container-sm">
+    <div class="alert alert-danger" id="error-msg"></div>
+  </div>
+</div>
+
+<!-- SELECT STUDENT -->
+<div id="view-select-student" style="display:none;">
+  <div class="student-hero">
+    <div class="container">
+      <h1 id="hero-title">Sociogram</h1>
+      <p id="hero-class">Klas</p>
+    </div>
+  </div>
+
+  <div class="container-sm" style="padding-top:3rem;padding-bottom:4rem;">
+    <div class="student-card">
+      <h2 style="margin-bottom:.5rem;">Wie ben jij?</h2>
+      <p style="margin-bottom:1.5rem;">Zoek jouw naam in de lijst hieronder om te beginnen.</p>
+
+      <div class="form-group">
+        <label for="student-search">Zoek jouw naam</label>
+        <input type="text" id="student-search" placeholder="Begin met typen…" autocomplete="off" />
+      </div>
+
+      <div id="student-name-list" class="choice-grid" style="margin-top:1rem;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div id="view-form" style="display:none;">
+  <div class="student-hero">
+    <div class="container">
+      <h1 id="form-hero-title">Sociogram</h1>
+      <p id="form-hero-sub">Klas</p>
+    </div>
+  </div>
+
+  <div class="container-sm" style="padding-top:3rem;padding-bottom:4rem;">
+
+    <!-- Greeting card -->
+    <div class="student-card" style="background:linear-gradient(135deg,var(--primary-light),#e0e7ff);border:none;text-align:center;margin-bottom:1.5rem;">
+      <div style="font-size:2.5rem;margin-bottom:.5rem;">👋</div>
+      <h2 id="greeting-name" style="margin-bottom:.25rem;">Hallo!</h2>
+      <p>Beantwoord de vragen eerlijk. Jouw antwoorden zijn vertrouwelijk en alleen voor de docent.</p>
+    </div>
+
+    <!-- Positive choices -->
+    <div class="student-card" id="pos-card">
+      <div class="flex items-center gap-1" style="margin-bottom:.4rem;">
+        <span style="font-size:1.4rem;">💚</span>
+        <h3 id="pos-question">Wie wil jij graag bij werken?</h3>
+      </div>
+      <p style="margin-bottom:1rem;" id="pos-hint">Kies maximaal <strong id="max-pos-label">3</strong> klasgenoten.</p>
+
+      <div id="pos-counter" class="badge badge-success" style="margin-bottom:.75rem;">0 / 3 gekozen</div>
+
+      <div class="form-group" style="margin-bottom:.75rem;">
+        <input type="text" id="pos-search" placeholder="Zoek naam…" autocomplete="off" />
+      </div>
+
+      <div id="pos-list" class="choice-grid"></div>
+    </div>
+
+    <!-- Negative choices -->
+    <div class="student-card" id="neg-card" style="margin-top:1.5rem;">
+      <div class="flex items-center gap-1" style="margin-bottom:.4rem;">
+        <span style="font-size:1.4rem;">🔴</span>
+        <h3>Met wie werk jij liever niet samen?</h3>
+      </div>
+      <p style="margin-bottom:1rem;">Dit is optioneel. Kies maximaal <strong id="max-neg-label">1</strong> klasgenoten.</p>
+
+      <div id="neg-counter" class="badge badge-danger" style="margin-bottom:.75rem;">0 / 1 gekozen</div>
+
+      <div class="form-group" style="margin-bottom:.75rem;">
+        <input type="text" id="neg-search" placeholder="Zoek naam…" autocomplete="off" />
+      </div>
+
+      <div id="neg-list" class="choice-grid"></div>
+    </div>
+
+    <div id="submit-error" class="alert alert-danger" style="display:none;margin-top:1rem;"></div>
+
+    <div style="margin-top:1.5rem;text-align:center;">
+      <button class="btn btn-primary btn-lg w-full" id="btn-submit" style="max-width:400px;">
+        Antwoorden versturen →
+      </button>
+      <p class="text-muted" style="margin-top:.75rem;font-size:.82rem;">
+        Je kunt je antwoorden slechts één keer versturen.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ALREADY SUBMITTED -->
+<div id="view-already" style="display:none;padding:3rem 1rem;">
+  <div class="container-sm">
+    <div class="student-card" style="text-align:center;">
+      <div style="font-size:3rem;margin-bottom:1rem;">✅</div>
+      <h2 style="margin-bottom:.5rem;">Al ingevuld</h2>
+      <p>Je hebt dit sociogram al eerder ingevuld. Bedankt!</p>
+    </div>
+  </div>
+</div>
+
+<!-- THANK YOU -->
+<div id="view-thanks" style="display:none;padding:3rem 1rem;">
+  <div class="container-sm">
+    <div class="student-card" style="text-align:center;background:linear-gradient(135deg,var(--success-light),#dcfce7);border:none;">
+      <div style="font-size:3.5rem;margin-bottom:1rem;">🎉</div>
+      <h2 style="color:#15803d;margin-bottom:.5rem;">Bedankt, <span id="thanks-name"></span>!</h2>
+      <p style="color:#166534;">Je antwoorden zijn opgeslagen. Je kunt dit venster sluiten.</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+/* =========================================================
+   Student Form – Vanilla JS
+   ========================================================= */
+
+const $ = id => document.getElementById(id);
+
+function showView(id) {
+  ['view-loading','view-error','view-select-student','view-form','view-already','view-thanks'].forEach(v => {
+    $(v).style.display = v === id ? '' : 'none';
+  });
+}
+
+function showToast(msg, type='') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  $('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ---- Parse token from URL ----
+const params = new URLSearchParams(location.search);
+const token = params.get('token');
+
+if (!token) {
+  showView('view-error');
+  $('error-msg').textContent = 'Geen geldige link. Vraag jouw docent om de juiste link.';
+}
+
+let sociogramData = null;
+let selectedStudentId = null;
+let positiveChoices = new Set();
+let negativeChoices = new Set();
+
+// ---- Load sociogram ----
+async function init() {
+  if (!token) return;
+
+  try {
+    const res = await fetch(`/api/student/${token}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Fout bij laden.');
+
+    sociogramData = data;
+
+    $('hero-title').textContent = data.title;
+    $('form-hero-title').textContent = data.title;
+    $('hero-class').textContent = `Klas ${data.class_name}`;
+    $('form-hero-sub').textContent = `Klas ${data.class_name}`;
+    $('max-pos-label').textContent = data.max_positive;
+    $('max-neg-label').textContent = data.max_negative;
+
+    if (!data.allow_negative) {
+      $('neg-card').style.display = 'none';
+    }
+
+    renderStudentList();
+    showView('view-select-student');
+  } catch(e) {
+    showView('view-error');
+    $('error-msg').textContent = e.message;
+  }
+}
+
+// ---- Student selection list ----
+function renderStudentList(filter = '') {
+  const list = $('student-name-list');
+  const lf = filter.toLowerCase();
+  const filtered = sociogramData.students.filter(s => !filter || s.name.toLowerCase().includes(lf));
+
+  if (!filtered.length) {
+    list.innerHTML = `<p class="text-muted" style="grid-column:1/-1;">Geen leerlingen gevonden.</p>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => `
+    <div class="choice-item" data-id="${s.id}" role="button" tabindex="0" aria-label="Kies ${s.name}">
+      <div class="choice-avatar">${initials(s.name)}</div>
+      <span class="choice-name">${escHtml(s.name)}</span>
+    </div>`).join('');
+
+  list.querySelectorAll('.choice-item').forEach(el => {
+    el.addEventListener('click', () => selectSelf(parseInt(el.dataset.id)));
+    el.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') selectSelf(parseInt(el.dataset.id)); });
+  });
+}
+
+$('student-search').addEventListener('input', function() {
+  renderStudentList(this.value);
+});
+
+async function selectSelf(studentId) {
+  // Check already submitted
+  try {
+    const res = await fetch(`/api/student/${token}/check/${studentId}`);
+    const data = await res.json();
+    if (data.submitted) { showView('view-already'); return; }
+  } catch(e) {}
+
+  selectedStudentId = studentId;
+  const student = sociogramData.students.find(s => s.id === studentId);
+  $('greeting-name').textContent = `Hallo, ${student.name}!`;
+  $('pos-question').textContent = `Wie wil jij graag bij werken?`;
+
+  positiveChoices.clear();
+  negativeChoices.clear();
+
+  renderChoiceList('pos', '');
+  renderChoiceList('neg', '');
+  updateCounters();
+
+  showView('view-form');
+}
+
+// ---- Choice lists ----
+function renderChoiceList(type, filter) {
+  const listEl = $(type === 'pos' ? 'pos-list' : 'neg-list');
+  const lf = filter.toLowerCase();
+  const filtered = sociogramData.students.filter(s => {
+    if (s.id === selectedStudentId) return false;
+    if (filter && !s.name.toLowerCase().includes(lf)) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    listEl.innerHTML = `<p class="text-muted" style="grid-column:1/-1;">Geen leerlingen gevonden.</p>`;
+    return;
+  }
+
+  const maxKey = type === 'pos' ? 'max_positive' : 'max_negative';
+  const maxVal = sociogramData[maxKey];
+  const selected = type === 'pos' ? positiveChoices : negativeChoices;
+  const other = type === 'pos' ? negativeChoices : positiveChoices;
+
+  listEl.innerHTML = filtered.map(s => {
+    const isSel = selected.has(s.id);
+    const isOther = other.has(s.id);
+    const maxReached = selected.size >= maxVal && !isSel;
+    let cls = 'choice-item';
+    let checkIcon = '';
+    let disabledAttr = '';
+
+    if (isSel) {
+      cls += type === 'pos' ? ' selected-pos' : ' selected-neg';
+      checkIcon = type === 'pos' ? '✓' : '✗';
+    } else if (maxReached || isOther) {
+      cls += type === 'pos' ? ' disabled-pos' : ' disabled-neg';
+      disabledAttr = 'aria-disabled="true" tabindex="-1"';
+    }
+
+    return `
+      <div class="${cls}" data-id="${s.id}" ${disabledAttr} role="button" tabindex="${disabledAttr ? -1 : 0}">
+        <div class="choice-avatar">${initials(s.name)}</div>
+        <span class="choice-name">${escHtml(s.name)}</span>
+        <span class="choice-check">${checkIcon}</span>
+      </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('.choice-item:not([aria-disabled])').forEach(el => {
+    el.addEventListener('click', () => toggleChoice(type, parseInt(el.dataset.id)));
+    el.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') toggleChoice(type, parseInt(el.dataset.id)); });
+  });
+}
+
+function toggleChoice(type, studentId) {
+  const selected = type === 'pos' ? positiveChoices : negativeChoices;
+  const other = type === 'pos' ? negativeChoices : positiveChoices;
+  const maxVal = type === 'pos' ? sociogramData.max_positive : sociogramData.max_negative;
+
+  if (other.has(studentId)) return; // already in other list
+
+  if (selected.has(studentId)) {
+    selected.delete(studentId);
+  } else {
+    if (selected.size >= maxVal) {
+      showToast(`Maximaal ${maxVal} keuze${maxVal===1?'':'s'} toegestaan.`, 'error');
+      return;
+    }
+    selected.add(studentId);
+  }
+
+  const posFilter = $('pos-search').value;
+  const negFilter = $('neg-search').value;
+  renderChoiceList('pos', posFilter);
+  renderChoiceList('neg', negFilter);
+  updateCounters();
+}
+
+function updateCounters() {
+  const maxPos = sociogramData.max_positive;
+  const maxNeg = sociogramData.max_negative;
+  $('pos-counter').textContent = `${positiveChoices.size} / ${maxPos} gekozen`;
+  $('neg-counter').textContent = `${negativeChoices.size} / ${maxNeg} gekozen`;
+
+  $('pos-counter').className = 'badge ' + (positiveChoices.size > 0 ? 'badge-success' : 'badge-neutral');
+  $('neg-counter').className = 'badge ' + (negativeChoices.size > 0 ? 'badge-danger' : 'badge-neutral');
+}
+
+$('pos-search').addEventListener('input', function() { renderChoiceList('pos', this.value); });
+$('neg-search').addEventListener('input', function() { renderChoiceList('neg', this.value); });
+
+// ---- Submit ----
+$('btn-submit').addEventListener('click', async () => {
+  if (positiveChoices.size === 0) {
+    $('submit-error').textContent = 'Kies minstens één klasgenoot bij de eerste vraag.';
+    $('submit-error').style.display = 'flex';
+    $('pos-card').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  $('submit-error').style.display = 'none';
+
+  const btn = $('btn-submit');
+  btn.textContent = 'Bezig met versturen…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`/api/student/${token}/submit`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        student_id: selectedStudentId,
+        positive_choices: [...positiveChoices],
+        negative_choices: [...negativeChoices]
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Fout bij versturen.');
+
+    $('thanks-name').textContent = data.name || '';
+    showView('view-thanks');
+  } catch(e) {
+    $('submit-error').textContent = e.message;
+    $('submit-error').style.display = 'flex';
+    btn.textContent = 'Antwoorden versturen →';
+    btn.disabled = false;
+  }
+});
+
+// ---- Helpers ----
+function initials(name) {
+  return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+}
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---- Start ----
+if (token) init();
+</script>
+</body>
+</html>
