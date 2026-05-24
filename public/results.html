@@ -6,10 +6,124 @@
   <title>Sociogram – Resultaten</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
-  <!-- D3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <style>
+    /* --- Results page extras --- */
+    .results-hero {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 70%, #4f46e5 100%);
+      padding: 2.5rem 0 4rem;
+      margin-bottom: -2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .results-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 85% 30%, rgba(139,92,246,.25) 0%, transparent 40%),
+        radial-gradient(circle at 15% 70%, rgba(6,182,212,.15) 0%, transparent 40%);
+    }
+    .results-hero h1 { color: white; position: relative; }
+    .results-hero p  { color: rgba(255,255,255,.7); position: relative; }
+    .results-hero .hero-badge {
+      display: inline-flex; align-items: center; gap: .45rem;
+      background: rgba(255,255,255,.15);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: .3rem .9rem;
+      border-radius: 99px;
+      font-size: .8rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,.25);
+      margin-bottom: 1rem;
+    }
+
+    /* Floating actions bar */
+    .actions-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .75rem;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.75rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Graph tooltip */
+    #graph-tooltip {
+      position: fixed;
+      background: rgba(15,23,42,.95);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: .75rem 1rem;
+      border-radius: var(--radius);
+      font-size: .85rem;
+      pointer-events: none;
+      z-index: 9999;
+      max-width: 230px;
+      display: none;
+      border: 1px solid rgba(255,255,255,.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+      line-height: 1.6;
+    }
+
+    /* Filter buttons */
+    .filter-group {
+      display: flex; gap: .35rem;
+      background: var(--neutral-light);
+      padding: .3rem;
+      border-radius: 10px;
+    }
+    .filter-btn {
+      padding: .35rem .85rem;
+      border-radius: 7px;
+      border: none;
+      font-family: var(--font);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .filter-btn.active {
+      background: var(--white);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Rank table extras */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: 1rem;
+    }
+    .section-label h3 { margin: 0; }
+    .section-label .label-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+
+    /* Graph legend bar */
+    .graph-legend-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem 1.1rem;
+      padding: .75rem 1rem;
+      background: rgba(255,255,255,.06);
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .graph-legend-bar .legend-item { color: rgba(255,255,255,.65); }
+  </style>
 </head>
 <body>
 
@@ -18,19 +132,16 @@
   <div class="container">
     <div class="header-inner">
       <a href="/" class="logo">
-        <div class="logo-icon">◎</div>
+        <div class="logo-icon">⬡</div>
         Sociogram
       </a>
-      <div class="flex gap-1" id="header-actions" style="display:none!important;">
-        <button class="btn btn-outline btn-sm" id="btn-export-csv">CSV exporteren</button>
-        <button class="btn btn-outline btn-sm" id="btn-refresh">↻ Vernieuwen</button>
-      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;" id="header-actions"></div>
     </div>
   </div>
 </header>
 
 <!-- LOADING -->
-<div id="view-loading">
+<div id="view-loading" style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
   <div class="loading-overlay">
     <div class="spinner"></div>
     <span>Resultaten laden…</span>
@@ -38,183 +149,225 @@
 </div>
 
 <!-- ERROR -->
-<div id="view-error" style="display:none;padding:3rem 1rem;">
-  <div class="container">
-    <div class="alert alert-danger" id="error-msg"></div>
-    <a href="/" class="btn btn-outline">← Terug naar dashboard</a>
+<div id="view-error" style="display:none;padding:4rem 1rem;">
+  <div class="container" style="text-align:center;">
+    <div style="font-size:3.5rem;margin-bottom:1rem;">😕</div>
+    <h2 style="margin-bottom:.5rem;">Sociogram niet gevonden</h2>
+    <div class="alert alert-danger" id="error-msg" style="display:inline-flex;max-width:460px;margin:1.5rem auto;"></div>
+    <div><a href="/" class="btn btn-outline">← Terug naar dashboard</a></div>
   </div>
 </div>
 
 <!-- MAIN RESULTS -->
 <div id="view-results" style="display:none;">
-<main style="padding:2rem 0 4rem;">
-<div class="container">
 
-  <!-- Title + meta -->
-  <div class="flex justify-between items-center" style="flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
-    <div>
-      <div class="flex items-center gap-1" style="flex-wrap:wrap;margin-bottom:.35rem;">
-        <h1 id="result-title" style="margin:0;font-size:1.7rem;"></h1>
-        <span class="badge badge-primary" id="result-class"></span>
+  <!-- Hero -->
+  <div class="results-hero">
+    <div class="container">
+      <div class="hero-badge">📊 Analyse resultaten</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;position:relative;">
+        <div>
+          <h1 id="result-title" style="margin:0 0 .35rem;font-size:2rem;"></h1>
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+            <span class="badge" id="result-class"
+              style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.3);"></span>
+            <span style="color:rgba(255,255,255,.6);font-size:.85rem;" id="result-meta"></span>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <a id="btn-export" href="#" class="btn"
+            style="background:rgba(255,255,255,.15);color:white;border-color:rgba(255,255,255,.3);backdrop-filter:blur(8px);">
+            ↓ CSV exporteren
+          </a>
+          <button id="btn-refresh" class="btn"
+            style="background:rgba(255,255,255,.15);color:white;border-color:rgba(255,255,255,.3);backdrop-filter:blur(8px);">
+            ↻ Vernieuwen
+          </button>
+          <a href="/" class="btn"
+            style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2);backdrop-filter:blur(8px);">
+            ← Dashboard
+          </a>
+        </div>
       </div>
-      <span class="text-muted" id="result-meta"></span>
-    </div>
-    <div class="flex gap-1" style="flex-wrap:wrap;">
-      <button class="btn btn-outline btn-sm" id="btn-export-csv2">CSV exporteren</button>
-      <button class="btn btn-secondary btn-sm" id="btn-refresh2">↻ Vernieuwen</button>
     </div>
   </div>
 
-  <!-- Stats -->
-  <div class="stats-grid" id="stats-grid"></div>
+  <main style="padding:2rem 0 5rem;">
+  <div class="container">
 
-  <!-- Tab navigation -->
-  <div class="card">
-    <div class="card-header" style="border-bottom:none;padding-bottom:0;">
-      <nav class="tab-nav" id="tab-nav">
-        <button class="tab-btn active" data-tab="graph">Netwerkgrafiek</button>
-        <button class="tab-btn" data-tab="ranking">Ranglijst</button>
-        <button class="tab-btn" data-tab="heatmap">Keuzetabel</button>
-        <button class="tab-btn" data-tab="clusters">Clusters</button>
-        <button class="tab-btn" data-tab="metrics">Statistieken</button>
-        <button class="tab-btn" data-tab="status">Antwoordstatus</button>
-      </nav>
-    </div>
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid"></div>
 
-    <div class="card-body">
-
-      <!-- TAB: Graph -->
-      <div class="tab-content active" id="tab-graph">
-        <div class="flex justify-between items-center" style="flex-wrap:wrap;gap:.75rem;margin-bottom:1rem;">
-          <div class="graph-controls">
-            <label>Toon:</label>
-            <button class="btn btn-sm btn-secondary active-filter" data-filter="all" id="filter-all">Alles</button>
-            <button class="btn btn-sm btn-outline" data-filter="positive" id="filter-pos">Positief</button>
-            <button class="btn btn-sm btn-outline" data-filter="negative" id="filter-neg">Negatief</button>
-          </div>
-          <div class="legend">
-            <span class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Populair</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Gemiddeld</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Geïsoleerd</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#94a3b8;width:20px;height:3px;border-radius:2px;"></span>Positieve keuze</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#ef4444;width:20px;height:3px;border-radius:2px;"></span>Negatieve keuze</span>
-          </div>
-        </div>
-        <div id="graph-container" style="height:520px;">
-          <svg id="graph-svg"></svg>
-          <div class="graph-tooltip" id="graph-tooltip"></div>
-        </div>
-        <p class="text-muted" style="margin-top:.5rem;font-size:.8rem;text-align:center;">
-          Sleep nodes om ze te verplaatsen · Scroll om in/uit te zoomen · Hover voor details
-        </p>
+    <!-- Tabs card -->
+    <div class="card">
+      <div class="card-header" style="border-bottom:none;padding-bottom:.5rem;">
+        <nav class="tab-nav" id="tab-nav" style="border:none;flex:1;">
+          <button class="tab-btn active" data-tab="graph">🕸 Netwerk</button>
+          <button class="tab-btn" data-tab="ranking">🏆 Ranglijst</button>
+          <button class="tab-btn" data-tab="heatmap">🔲 Keuzetabel</button>
+          <button class="tab-btn" data-tab="clusters">👥 Clusters</button>
+          <button class="tab-btn" data-tab="metrics">📊 Statistieken</button>
+          <button class="tab-btn" data-tab="status">✅ Deelname</button>
+        </nav>
       </div>
 
-      <!-- TAB: Ranking -->
-      <div class="tab-content" id="tab-ranking">
-        <div class="form-row" style="gap:1.5rem;">
-          <div>
-            <h3 style="margin-bottom:1rem;">💚 Meest gekozen (positief)</h3>
-            <ol class="ranking-list" id="ranking-pos"></ol>
+      <div class="card-body" style="padding-top:1rem;">
+
+        <!-- ========== TAB: GRAPH ========== -->
+        <div class="tab-content active" id="tab-graph">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem;">
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">Alles</button>
+              <button class="filter-btn" data-filter="positive">💚 Positief</button>
+              <button class="filter-btn" data-filter="negative">🔴 Negatief</button>
+            </div>
+            <p style="font-size:.8rem;margin:0;">Sleep nodes · Scroll = zoom · Hover = details</p>
           </div>
-          <div id="ranking-neg-section">
-            <h3 style="margin-bottom:1rem;">🔴 Meest gekozen (negatief)</h3>
-            <ol class="ranking-list" id="ranking-neg"></ol>
+
+          <div id="graph-container" style="height:540px;position:relative;">
+            <svg id="graph-svg"></svg>
+            <!-- Controls overlay -->
+            <div class="graph-controls-overlay">
+              <button class="graph-ctrl-btn" id="zoom-in" title="Inzoomen">+</button>
+              <button class="graph-ctrl-btn" id="zoom-out" title="Uitzoomen">−</button>
+              <button class="graph-ctrl-btn" id="zoom-reset" title="Reset">⌖</button>
+            </div>
+            <!-- Legend overlay -->
+            <div class="graph-legend-bar" style="position:absolute;bottom:0;left:0;right:0;">
+              <span class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Ster</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#10b981;"></span>Populair</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#6366f1;"></span>Gemiddeld</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Verwaarloosd</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#f43f5e;"></span>Afgewezen/Geïsoleerd</span>
+              <span class="legend-item"><span style="display:inline-block;width:20px;height:2px;background:#10b981;border-radius:2px;"></span>Positief</span>
+              <span class="legend-item"><span style="display:inline-block;width:20px;height:2px;background:#f43f5e;border-radius:2px;border-top:2px dashed #f43f5e;"></span>Negatief</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: RANKING ========== -->
+        <div class="tab-content" id="tab-ranking">
+          <div class="form-row" style="gap:2rem;align-items:flex-start;">
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#d1fae5;">💚</div>
+                <h3>Meest positief gekozen</h3>
+              </div>
+              <ol class="ranking-list" id="ranking-pos"></ol>
+            </div>
+            <div id="ranking-neg-section">
+              <div class="section-label">
+                <div class="label-icon" style="background:#ffe4e6;">🔴</div>
+                <h3>Meest negatief gekozen</h3>
+              </div>
+              <ol class="ranking-list" id="ranking-neg"></ol>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="form-row" style="gap:2rem;align-items:flex-start;">
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#fef3c7;">⭐</div>
+                <h3>Sterren</h3>
+              </div>
+              <div id="stars-list"></div>
+            </div>
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#dbeafe;">🔁</div>
+                <h3>Wederkerige verbindingen</h3>
+              </div>
+              <div id="reciprocal-list"></div>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="form-row" style="gap:2rem;align-items:flex-start;">
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#f1f5f9;">👻</div>
+                <h3>Verwaarloosd</h3>
+              </div>
+              <p style="font-size:.85rem;margin-bottom:.75rem;">Weinig tot geen positieve keuzes ontvangen</p>
+              <div id="neglected-list"></div>
+            </div>
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#ffe4e6;">🚨</div>
+                <h3>Geïsoleerd</h3>
+              </div>
+              <p style="font-size:.85rem;margin-bottom:.75rem;">Helemaal niet gekozen door klasgenoten</p>
+              <div id="isolated-list"></div>
+            </div>
           </div>
         </div>
 
-        <hr class="divider" />
-
-        <div class="form-row" style="gap:1.5rem;">
-          <div>
-            <h3 style="margin-bottom:.5rem;">⭐ Sterren</h3>
-            <p style="font-size:.85rem;margin-bottom:1rem;">Leerlingen die veel positieve keuzes ontvangen</p>
-            <div id="stars-list"></div>
-          </div>
-          <div>
-            <h3 style="margin-bottom:.5rem;">🔵 Wederkerige verbindingen</h3>
-            <p style="font-size:.85rem;margin-bottom:1rem;">Leerlingen die elkaar wederzijds kozen</p>
-            <div id="reciprocal-list"></div>
+        <!-- ========== TAB: HEATMAP ========== -->
+        <div class="tab-content" id="tab-heatmap">
+          <p style="margin-bottom:1rem;">Rijen = wie koos, kolommen = wie werd gekozen.
+            <span style="background:#d1fae5;color:#065f46;padding:.1rem .45rem;border-radius:5px;font-weight:700;">+</span> positief
+            &nbsp;·&nbsp;
+            <span style="background:#ffe4e6;color:#be123c;padding:.1rem .45rem;border-radius:5px;font-weight:700;">−</span> negatief
+          </p>
+          <div id="heatmap-container">
+            <div id="heatmap-inner"></div>
           </div>
         </div>
 
-        <hr class="divider" />
+        <!-- ========== TAB: CLUSTERS ========== -->
+        <div class="tab-content" id="tab-clusters">
+          <p style="margin-bottom:1.5rem;">Groepen zijn berekend op basis van positieve verbindingen in de klas (label propagation).</p>
+          <div id="clusters-list" style="display:flex;flex-direction:column;gap:.85rem;"></div>
+        </div>
 
-        <div class="form-row" style="gap:1.5rem;">
-          <div>
-            <h3 style="margin-bottom:.5rem;">👻 Verwaarloosd</h3>
-            <p style="font-size:.85rem;margin-bottom:1rem;">Leerlingen met weinig positieve keuzes</p>
-            <div id="neglected-list"></div>
+        <!-- ========== TAB: METRICS ========== -->
+        <div class="tab-content" id="tab-metrics">
+          <p style="margin-bottom:1.25rem;">Gedetailleerde sociometrische statistieken per leerling.</p>
+          <div style="overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);">
+            <table>
+              <thead>
+                <tr>
+                  <th>Leerling</th>
+                  <th title="Positieve keuzes ontvangen">+ Ontvangen</th>
+                  <th title="Negatieve keuzes ontvangen">- Ontvangen</th>
+                  <th title="Positieve keuzes gegeven">+ Gegeven</th>
+                  <th title="Net score">Netto</th>
+                  <th title="Wederk.">Wederkerigheid</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="metrics-tbody"></tbody>
+            </table>
           </div>
-          <div>
-            <h3 style="margin-bottom:.5rem;">🚨 Geïsoleerd</h3>
-            <p style="font-size:.85rem;margin-bottom:1rem;">Leerlingen die door niemand zijn gekozen</p>
-            <div id="isolated-list"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: Heatmap -->
-      <div class="tab-content" id="tab-heatmap">
-        <p style="margin-bottom:1rem;">Rijen = wie koos, kolommen = wie werd gekozen. <span style="color:var(--success);font-weight:600;">Groen = positief</span>, <span style="color:var(--danger);font-weight:600;">Rood = negatief</span>.</p>
-        <div id="heatmap-container">
-          <div id="heatmap-inner"></div>
-        </div>
-      </div>
-
-      <!-- TAB: Clusters -->
-      <div class="tab-content" id="tab-clusters">
-        <p style="margin-bottom:1.5rem;">Groepen van leerlingen die sterk onderling verbonden zijn (op basis van positieve keuzes).</p>
-        <div id="clusters-list"></div>
-      </div>
-
-      <!-- TAB: Metrics -->
-      <div class="tab-content" id="tab-metrics">
-        <p style="margin-bottom:1.5rem;">Gedetailleerde sociometrische statistieken per leerling.</p>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Leerling</th>
-                <th title="Positieve keuzes ontvangen">+ Ontvangen</th>
-                <th title="Negatieve keuzes ontvangen">- Ontvangen</th>
-                <th title="Positieve keuzes gegeven">+ Gegeven</th>
-                <th title="Nettoscore (positief – negatief)">Nettoscore</th>
-                <th title="Proportie wederzijdse keuzes">Wederkerigheid</th>
-                <th title="Sociometrische status">Status</th>
-              </tr>
-            </thead>
-            <tbody id="metrics-tbody"></tbody>
-          </table>
-        </div>
-
-        <hr class="divider" />
-        <div>
+          <hr class="divider" />
           <h3 style="margin-bottom:1rem;">Groepsindicatoren</h3>
           <div id="group-metrics"></div>
         </div>
-      </div>
 
-      <!-- TAB: Status -->
-      <div class="tab-content" id="tab-status">
-        <p style="margin-bottom:1.5rem;">Overzicht van welke leerlingen het formulier al hebben ingevuld.</p>
-        <div id="status-list"></div>
-        <p class="text-muted" style="margin-top:1rem;font-size:.82rem;">
-          Deze pagina wordt elke 30 seconden automatisch bijgewerkt.
-        </p>
-      </div>
+        <!-- ========== TAB: STATUS ========== -->
+        <div class="tab-content" id="tab-status">
+          <p style="margin-bottom:1.5rem;">Overzicht van welke leerlingen het formulier al hebben ingevuld. Ververst automatisch.</p>
+          <div id="status-list"></div>
+        </div>
 
-    </div><!-- /card-body -->
-  </div><!-- /card -->
+      </div><!-- /card-body -->
+    </div><!-- /card -->
 
-</div><!-- /container -->
-</main>
+  </div>
+  </main>
 </div>
+
+<!-- Graph tooltip (fixed position) -->
+<div id="graph-tooltip"></div>
 
 <div id="toast-container"></div>
 
 <script>
 /* =========================================================
-   Results Page – Vanilla JS + D3
+   Results Page – D3 + Advanced Analysis
    ========================================================= */
 
 const $ = id => document.getElementById(id);
@@ -223,14 +376,13 @@ const token = params.get('token');
 let lastData = null;
 let simulation = null;
 let currentFilter = 'all';
+let zoomBehavior = null;
+let svgRef = null;
 
 function showView(id) {
   ['view-loading','view-error','view-results'].forEach(v => {
-    document.getElementById(v).style.display = v === id ? '' : 'none';
+    $(v).style.display = v === id ? '' : 'none';
   });
-  if (id === 'view-results') {
-    document.getElementById('header-actions').style.display = 'flex';
-  }
 }
 
 function showToast(msg, type='') {
@@ -245,17 +397,19 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// =========================================================
-// LOAD DATA
-// =========================================================
+/* =========================================================
+   LOAD
+   ========================================================= */
 async function loadResults() {
-  if (!token) { showView('view-error'); $('error-msg').textContent = 'Geen token opgegeven.'; return; }
-
+  if (!token) {
+    showView('view-error');
+    $('error-msg').textContent = 'Geen token opgegeven in de URL.';
+    return;
+  }
   try {
     const res = await fetch(`/api/sociograms/${token}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Niet gevonden.');
-
     lastData = data;
     render(data);
     showView('view-results');
@@ -265,39 +419,28 @@ async function loadResults() {
   }
 }
 
-// =========================================================
-// ANALYSIS FUNCTIONS
-// =========================================================
+/* =========================================================
+   ANALYSIS
+   ========================================================= */
 function analyse(data) {
   const { sociogram, students, responses, submittedIds } = data;
   const N = students.length;
-  const sMap = {}; // id -> student
+  const sMap = {};
   students.forEach(s => { sMap[s.id] = s; });
 
-  // Adjacency
-  const posIn  = {};
-  const negIn  = {};
-  const posOut = {};
-  const negOut = {};
+  const posIn={}, negIn={}, posOut={}, negOut={};
   students.forEach(s => { posIn[s.id]=0; negIn[s.id]=0; posOut[s.id]=0; negOut[s.id]=0; });
 
   responses.forEach(r => {
-    if (r.choice_type === 'positive') {
-      posIn[r.to_student]++;
-      posOut[r.from_student]++;
-    } else {
-      negIn[r.to_student]++;
-      negOut[r.from_student]++;
-    }
+    if (r.choice_type==='positive') { posIn[r.to_student]++; posOut[r.from_student]++; }
+    else { negIn[r.to_student]++; negOut[r.from_student]++; }
   });
 
-  // Reciprocal pairs
   const posEdgeSet = new Set(responses.filter(r=>r.choice_type==='positive').map(r=>`${r.from_student}-${r.to_student}`));
   const reciprocalPairs = [];
   const reciprocalSet = new Set();
   responses.filter(r=>r.choice_type==='positive').forEach(r => {
-    const rev = `${r.to_student}-${r.from_student}`;
-    if (posEdgeSet.has(rev)) {
+    if (posEdgeSet.has(`${r.to_student}-${r.from_student}`)) {
       const key = [r.from_student, r.to_student].sort().join('-');
       if (!reciprocalSet.has(key)) {
         reciprocalSet.add(key);
@@ -309,389 +452,320 @@ function analyse(data) {
   const submittedSet = new Set(submittedIds);
   const totalSubmitted = submittedIds.length;
 
-  // Status per student
   const statusMap = {};
   students.forEach(s => {
-    const pos = posIn[s.id];
-    const neg = negIn[s.id];
-    const net = pos - neg;
+    const pos = posIn[s.id], neg = negIn[s.id], net = pos - neg;
     let status = 'Gemiddeld';
     if (totalSubmitted > 0) {
-      if (pos === 0 && neg === 0) status = 'Geïsoleerd';
-      else if (net >= Math.max(2, Math.floor(N * 0.25))) status = 'Ster';
-      else if (neg >= Math.max(2, Math.floor(N * 0.25))) status = 'Afgewezen';
-      else if (pos <= 1 && neg === 0) status = 'Verwaarloosd';
+      if (pos===0 && neg===0) status = 'Geïsoleerd';
+      else if (net >= Math.max(2, Math.floor(N*.25))) status = 'Ster';
+      else if (neg >= Math.max(2, Math.floor(N*.25))) status = 'Afgewezen';
+      else if (pos<=1 && neg===0) status = 'Verwaarloosd';
     }
     statusMap[s.id] = status;
   });
 
-  // Reciprocity per student
   const recipCount = {};
-  students.forEach(s => { recipCount[s.id] = 0; });
+  students.forEach(s => { recipCount[s.id]=0; });
   reciprocalPairs.forEach(p => { recipCount[p.a]++; recipCount[p.b]++; });
 
-  // Reciprocity index (group)
   const totalPosPairs = responses.filter(r=>r.choice_type==='positive').length;
-  const reciprocityIndex = totalPosPairs > 0 ? (reciprocalPairs.length * 2 / totalPosPairs).toFixed(2) : 0;
-
-  // Community detection (simple label propagation on positive edges)
+  const reciprocityIndex = totalPosPairs > 0 ? (reciprocalPairs.length*2/totalPosPairs) : 0;
   const clusters = detectClusters(students, responses);
 
-  return {
-    N, students, sMap, posIn, negIn, posOut, negOut,
+  return { N, students, sMap, posIn, negIn, posOut, negOut,
     submittedSet, totalSubmitted, statusMap,
-    reciprocalPairs, recipCount, reciprocityIndex,
-    totalPosPairs, clusters
-  };
+    reciprocalPairs, recipCount, reciprocityIndex, totalPosPairs, clusters };
 }
 
-// Simple greedy community detection via label propagation
 function detectClusters(students, responses) {
   const posEdges = responses.filter(r=>r.choice_type==='positive');
-  if (posEdges.length === 0) return students.map((s,i)=>({id:i,members:[s.id]}));
+  if (!posEdges.length) return students.map((s,i)=>({id:i,members:[s.id]}));
 
-  // Build adjacency list (undirected for clustering)
   const adj = {};
-  students.forEach(s => { adj[s.id] = new Set(); });
-  posEdges.forEach(r => {
-    adj[r.from_student].add(r.to_student);
-    adj[r.to_student].add(r.from_student);
-  });
+  students.forEach(s => { adj[s.id]=new Set(); });
+  posEdges.forEach(r => { adj[r.from_student].add(r.to_student); adj[r.to_student].add(r.from_student); });
 
-  // Label propagation
   const labels = {};
-  students.forEach(s => { labels[s.id] = s.id; });
+  students.forEach(s => { labels[s.id]=s.id; });
 
-  for (let iter = 0; iter < 20; iter++) {
-    let changed = false;
-    const shuffled = [...students].sort(() => Math.random() - .5);
-    shuffled.forEach(s => {
-      const neighbors = [...adj[s.id]];
-      if (!neighbors.length) return;
-      const freq = {};
-      neighbors.forEach(n => { const l = labels[n]; freq[l] = (freq[l]||0)+1; });
-      const maxFreq = Math.max(...Object.values(freq));
-      const best = Object.keys(freq).filter(l=>freq[l]===maxFreq);
-      const newLabel = parseInt(best[Math.floor(Math.random()*best.length)]);
-      if (newLabel !== labels[s.id]) { labels[s.id] = newLabel; changed = true; }
+  for (let iter=0; iter<20; iter++) {
+    let changed=false;
+    [...students].sort(()=>Math.random()-.5).forEach(s => {
+      const nbrs = [...adj[s.id]];
+      if (!nbrs.length) return;
+      const freq={};
+      nbrs.forEach(n => { const l=labels[n]; freq[l]=(freq[l]||0)+1; });
+      const maxF = Math.max(...Object.values(freq));
+      const best = Object.keys(freq).filter(l=>freq[l]===maxF);
+      const newL = parseInt(best[Math.floor(Math.random()*best.length)]);
+      if (newL!==labels[s.id]) { labels[s.id]=newL; changed=true; }
     });
     if (!changed) break;
   }
 
-  // Group by label
-  const clusterMap = {};
-  students.forEach(s => {
-    const l = labels[s.id];
-    if (!clusterMap[l]) clusterMap[l] = [];
-    clusterMap[l].push(s.id);
-  });
-
-  return Object.values(clusterMap)
-    .filter(c => c.length > 0)
-    .sort((a,b) => b.length - a.length)
-    .map((members, i) => ({ id: i, members }));
+  const cm={};
+  students.forEach(s => { const l=labels[s.id]; if(!cm[l]) cm[l]=[]; cm[l].push(s.id); });
+  return Object.values(cm).filter(c=>c.length>0).sort((a,b)=>b.length-a.length).map((m,i)=>({id:i,members:m}));
 }
 
-// =========================================================
-// RENDER
-// =========================================================
+/* =========================================================
+   RENDER
+   ========================================================= */
 function render(data) {
-  const { sociogram, students, responses, submittedIds } = data;
+  const { sociogram, students } = data;
   const a = analyse(data);
 
-  // Title
   $('result-title').textContent = sociogram.title;
   $('result-class').textContent = sociogram.class_name;
-  $('result-meta').textContent = `Code: ${sociogram.token} · ${students.length} leerlingen · Aangemaakt ${new Date(sociogram.created_at).toLocaleDateString('nl-NL')}`;
+  $('result-meta').textContent  = `${students.length} leerlingen · Code: ${sociogram.token}`;
 
-  renderStats(a, sociogram);
+  $('btn-export').href = `/api/sociograms/${token}/export`;
+  $('header-actions').innerHTML =
+    `<a href="/api/sociograms/${token}/export" class="btn btn-outline btn-sm">↓ CSV</a>
+     <a href="/" class="btn btn-secondary btn-sm">← Dashboard</a>`;
+
+  renderStats(a);
   renderGraph(data, a);
   renderRanking(a);
-  renderHeatmap(data, a);
+  renderHeatmap(data);
   renderClusters(a);
   renderMetrics(a, sociogram);
   renderStatus(data, a);
 }
 
-// ---- Stats cards ----
-function renderStats(a, sg) {
-  const pct = a.N ? Math.round(a.totalSubmitted / a.N * 100) : 0;
-  const isolated = a.students.filter(s => a.statusMap[s.id] === 'Geïsoleerd').length;
-  const stars = a.students.filter(s => a.statusMap[s.id] === 'Ster').length;
-  const pairs = a.reciprocalPairs.length;
+/* ---- Stats ---- */
+function renderStats(a) {
+  const pct = a.N ? Math.round(a.totalSubmitted/a.N*100) : 0;
+  const stars    = a.students.filter(s=>a.statusMap[s.id]==='Ster').length;
+  const isolated = a.students.filter(s=>a.statusMap[s.id]==='Geïsoleerd').length;
+  const pairs    = a.reciprocalPairs.length;
 
-  $('stats-grid').innerHTML = `
-    <div class="stat-card">
-      <span class="stat-icon">📋</span>
-      <span class="stat-value">${a.totalSubmitted} / ${a.N}</span>
-      <span class="stat-label">Ingevuld (${pct}%)</span>
-      <div class="progress-bar-wrap" style="margin-top:.5rem;">
-        <div class="progress-bar-fill" style="width:${pct}%;background:${pct===100?'var(--success)':'var(--primary)'};"></div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <span class="stat-icon">⭐</span>
-      <span class="stat-value">${stars}</span>
-      <span class="stat-label">Sterren</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-icon">🔁</span>
-      <span class="stat-value">${pairs}</span>
-      <span class="stat-label">Wederkerige paren</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-icon">🚨</span>
-      <span class="stat-value">${isolated}</span>
-      <span class="stat-label">Geïsoleerde leerlingen</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-icon">📊</span>
-      <span class="stat-value">${(a.reciprocityIndex * 100).toFixed(0)}%</span>
-      <span class="stat-label">Wederkerigheidsindex</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-icon">👥</span>
-      <span class="stat-value">${a.clusters.length}</span>
-      <span class="stat-label">Sociale clusters</span>
-    </div>
-  `;
+  const card = (icon, value, label, accent) => `
+    <div class="stat-card" style="--card-accent:${accent};">
+      <span class="stat-icon">${icon}</span>
+      <span class="stat-value">${value}</span>
+      <span class="stat-label">${label}</span>
+    </div>`;
+
+  $('stats-grid').innerHTML =
+    card('📋', `${a.totalSubmitted}/${a.N}`, `Ingevuld (${pct}%)`,
+      pct===100 ? 'linear-gradient(90deg,#10b981,#059669)' : 'linear-gradient(90deg,var(--primary),var(--violet))') +
+    card('⭐', stars, 'Sterren', 'linear-gradient(90deg,#f59e0b,#d97706)') +
+    card('🔁', pairs, 'Wederkerige banden', 'linear-gradient(90deg,#06b6d4,#0284c7)') +
+    card('🚨', isolated, 'Geïsoleerd', 'linear-gradient(90deg,#f43f5e,#e11d48)') +
+    card('📊', `${(a.reciprocityIndex*100).toFixed(0)}%`, 'Wederkerigheidsindex', 'linear-gradient(90deg,#8b5cf6,#7c3aed)') +
+    card('👥', a.clusters.length, 'Sociale groepen', 'linear-gradient(90deg,#10b981,#059669)');
 }
 
-// ---- D3 Network Graph ----
+/* ---- D3 Graph ---- */
 function renderGraph(data, a) {
   const { students, responses } = data;
   const { posIn, negIn, statusMap } = a;
 
   const container = $('graph-container');
-  const w = container.clientWidth || 800;
-  const h = 520;
+  const W = container.clientWidth || 800;
+  const H = 480; // leave room for legend bar at bottom
 
   d3.select('#graph-svg').selectAll('*').remove();
 
-  const svg = d3.select('#graph-svg')
-    .attr('width', w)
-    .attr('height', h);
+  const svg = d3.select('#graph-svg').attr('width', W).attr('height', H);
+  const g   = svg.append('g');
 
-  const g = svg.append('g');
-
-  // Zoom
-  const zoom = d3.zoom()
-    .scaleExtent([.2, 4])
+  zoomBehavior = d3.zoom().scaleExtent([.15, 5])
     .on('zoom', e => g.attr('transform', e.transform));
-  svg.call(zoom);
+  svg.call(zoomBehavior);
+  svgRef = svg;
 
-  // Arrow markers
+  // Defs
   const defs = svg.append('defs');
-  [['arrow-pos', '#22c55e'], ['arrow-neg', '#ef4444']].forEach(([id, color]) => {
-    defs.append('marker')
-      .attr('id', id)
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 22)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', color);
+  const gradColors = { ster:'#f59e0b', populair:'#10b981', gemiddeld:'#6366f1', verwaarloosd:'#f97316', afgewezen:'#f43f5e', geïsoleerd:'#f43f5e' };
+
+  [['pos','#10b981'],['neg','#f43f5e']].forEach(([id, color]) => {
+    defs.append('marker').attr('id','arrow-'+id)
+      .attr('viewBox','0 -5 10 10').attr('refX',22).attr('refY',0)
+      .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
+      .append('path').attr('d','M0,-5L10,0L0,5').attr('fill',color).attr('opacity',.8);
   });
 
-  // Node colors
-  function nodeColor(sid) {
-    const st = statusMap[sid];
-    if (st === 'Ster')        return '#22c55e';
-    if (st === 'Geïsoleerd')  return '#ef4444';
-    if (st === 'Afgewezen')   return '#f97316';
-    if (st === 'Verwaarloosd')return '#94a3b8';
-    return '#4f46e5';
-  }
+  // Glow filter
+  const f = defs.append('filter').attr('id','glow').attr('x','-30%').attr('y','-30%').attr('width','160%').attr('height','160%');
+  f.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
+  const feMerge = f.append('feMerge');
+  feMerge.append('feMergeNode').attr('in','blur');
+  feMerge.append('feMergeNode').attr('in','SourceGraphic');
 
-  // Node radius based on positive in-degree
-  function nodeRadius(sid) {
-    return Math.max(16, Math.min(36, 16 + posIn[sid] * 3));
+  function nodeColor(id) {
+    const s = statusMap[id];
+    return { Ster:'#f59e0b', Populair:'#10b981', Gemiddeld:'#6366f1', Verwaarloosd:'#f97316', Afgewezen:'#f43f5e', Geïsoleerd:'#f43f5e' }[s] || '#6366f1';
   }
+  function nodeR(id) { return Math.max(14, Math.min(32, 14 + (posIn[id]||0)*3)); }
 
   const links = responses
-    .filter(r => currentFilter === 'all' || r.choice_type === currentFilter)
+    .filter(r => currentFilter==='all' || r.choice_type===currentFilter)
     .map(r => ({ source: r.from_student, target: r.to_student, type: r.choice_type }));
 
   const nodes = students.map(s => ({ id: s.id, name: s.name }));
 
-  // Force simulation
   simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d => d.id).distance(120))
-    .force('charge', d3.forceManyBody().strength(-350))
-    .force('center', d3.forceCenter(w / 2, h / 2))
-    .force('collision', d3.forceCollide().radius(d => nodeRadius(d.id) + 8));
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(110).strength(.45))
+    .force('charge', d3.forceManyBody().strength(-320))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide().radius(d=>nodeR(d.id)+10));
 
   // Links
-  const link = g.append('g').attr('class', 'links')
-    .selectAll('line')
-    .data(links)
-    .enter().append('line')
-    .attr('class', d => 'link ' + d.type)
-    .attr('stroke-width', 2)
-    .attr('marker-end', d => `url(#${d.type === 'positive' ? 'arrow-pos' : 'arrow-neg'})`);
+  const link = g.append('g').selectAll('line').data(links).enter().append('line')
+    .attr('stroke', d => d.type==='positive' ? '#10b981' : '#f43f5e')
+    .attr('stroke-width', d => d.type==='positive' ? 1.5 : 1.5)
+    .attr('stroke-opacity', .55)
+    .attr('stroke-dasharray', d => d.type==='negative' ? '5 3' : null)
+    .attr('marker-end', d => `url(#arrow-${d.type==='positive'?'pos':'neg'})`);
 
   // Nodes
-  const node = g.append('g').attr('class', 'nodes')
-    .selectAll('.node')
-    .data(nodes)
-    .enter().append('g')
-    .attr('class', 'node')
+  const tooltip = $('graph-tooltip');
+  const node = g.append('g').selectAll('g').data(nodes).enter().append('g')
+    .attr('class','node')
+    .style('cursor','grab')
     .call(d3.drag()
-      .on('start', (event, d) => {
-        if (!event.active) simulation.alphaTarget(.3).restart();
-        d.fx = d.x; d.fy = d.y;
-      })
-      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
-      .on('end', (event, d) => {
-        if (!event.active) simulation.alphaTarget(0);
-        d.fx = null; d.fy = null;
-      })
-    );
+      .on('start', (e,d) => { if(!e.active) simulation.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag', (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end', (e,d) => { if(!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }));
 
   node.append('circle')
-    .attr('r', d => nodeRadius(d.id))
-    .attr('fill', d => nodeColor(d.id));
+    .attr('r', d => nodeR(d.id))
+    .attr('fill', d => nodeColor(d.id))
+    .attr('stroke', 'rgba(255,255,255,.25)')
+    .attr('stroke-width', 2)
+    .attr('filter', 'url(#glow)')
+    .on('mouseover', (e,d) => {
+      const pos = posIn[d.id]||0, neg = negIn[d.id]||0;
+      const statusLabels = { Ster:'⭐ Ster', Populair:'✅ Populair', Gemiddeld:'🔵 Gemiddeld',
+        Verwaarloosd:'👻 Verwaarloosd', Afgewezen:'🔴 Afgewezen', Geïsoleerd:'🚨 Geïsoleerd' };
+      tooltip.innerHTML = `
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:.4rem;">${escHtml(d.name)}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.15rem .75rem;font-size:.82rem;color:rgba(255,255,255,.8);">
+          <span>+ Ontvangen</span><strong style="color:#10b981;">+${pos}</strong>
+          <span>− Ontvangen</span><strong style="color:#f43f5e;">-${neg}</strong>
+          <span>Nettoscore</span><strong style="color:${pos-neg>=0?'#10b981':'#f43f5e'}">${pos-neg>=0?'+':''}${pos-neg}</strong>
+          <span>Status</span><strong>${statusLabels[statusMap[d.id]]||statusMap[d.id]}</strong>
+        </div>`;
+      tooltip.style.display = 'block';
+    })
+    .on('mousemove', e => {
+      let x = e.clientX + 14, y = e.clientY - 14;
+      if (x + 240 > window.innerWidth) x = e.clientX - 248;
+      tooltip.style.left = x + 'px';
+      tooltip.style.top  = y + 'px';
+    })
+    .on('mouseout', () => { tooltip.style.display = 'none'; });
 
   node.append('text')
-    .attr('dy', '.35em')
-    .attr('text-anchor', 'middle')
-    .text(d => d.name.split(' ')[0])
-    .style('font-size', d => Math.min(12, nodeRadius(d.id) * .7) + 'px');
-
-  // Tooltip
-  const tooltip = $('graph-tooltip');
-  node.on('mouseover', (event, d) => {
-    const pos = posIn[d.id] || 0;
-    const neg = negIn[d.id] || 0;
-    const st = statusMap[d.id];
-    tooltip.innerHTML = `<strong>${d.name}</strong><br>+ ${pos} ontvangen · - ${neg} ontvangen<br>Status: ${st}`;
-    tooltip.style.opacity = '1';
-  }).on('mousemove', event => {
-    const rect = container.getBoundingClientRect();
-    tooltip.style.left = (event.clientX - rect.left + 12) + 'px';
-    tooltip.style.top  = (event.clientY - rect.top  - 10) + 'px';
-  }).on('mouseout', () => {
-    tooltip.style.opacity = '0';
-  });
+    .attr('dy','.35em').attr('text-anchor','middle')
+    .attr('fill','rgba(255,255,255,.92)').attr('font-size', d => Math.min(11,nodeR(d.id)*.7)+'px')
+    .attr('font-weight','600').attr('font-family','Inter,sans-serif')
+    .attr('pointer-events','none')
+    .text(d => d.name.split(' ')[0]);
 
   simulation.on('tick', () => {
-    link
-      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-    node.attr('transform', d => `translate(${d.x},${d.y})`);
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+        .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform',d=>`translate(${d.x},${d.y})`);
   });
 }
 
-// ---- Graph filter buttons ----
-document.querySelectorAll('[data-filter]').forEach(btn => {
+/* Zoom controls */
+$('zoom-in').onclick  = () => svgRef?.transition().call(zoomBehavior.scaleBy, 1.4);
+$('zoom-out').onclick = () => svgRef?.transition().call(zoomBehavior.scaleBy, .7);
+$('zoom-reset').onclick = () => svgRef?.transition().call(zoomBehavior.transform, d3.zoomIdentity);
+
+/* Filter buttons */
+document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', function() {
     currentFilter = this.dataset.filter;
-    document.querySelectorAll('[data-filter]').forEach(b => {
-      b.className = b.className.replace(' btn-secondary',' btn-outline').replace('btn-secondary','btn-outline');
-    });
-    this.className = this.className.replace('btn-outline','btn-secondary');
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
     if (lastData) renderGraph(lastData, analyse(lastData));
   });
 });
 
-// ---- Ranking ----
+/* ---- Ranking ---- */
 function renderRanking(a) {
   const { students, sMap, posIn, negIn, statusMap, reciprocalPairs, recipCount } = a;
 
-  // Sort by posIn desc
-  const byPos = [...students].sort((x,y) => (posIn[y.id]||0) - (posIn[x.id]||0));
-  const byNeg = [...students].sort((x,y) => (negIn[y.id]||0) - (negIn[x.id]||0));
+  const byPos = [...students].sort((x,y)=>(posIn[y.id]||0)-(posIn[x.id]||0));
+  const byNeg = [...students].sort((x,y)=>(negIn[y.id]||0)-(negIn[x.id]||0));
 
-  function rankList(list, scoreFn, badgeType) {
-    return list.slice(0,10).map((s, i) => {
+  function rankItems(list, scoreFn, colorVar) {
+    return list.slice(0,10).map((s,i) => {
       const score = scoreFn(s.id);
-      if (score === 0 && i > 0) return '';
-      const rankClass = i < 3 ? `rank-${i+1}` : '';
-      return `
-        <li class="ranking-item ${rankClass}">
-          <div class="rank-number">${i+1}</div>
-          <span class="rank-name">${escHtml(s.name)}</span>
-          <span class="badge badge-${badgeType}">${score} keuzes</span>
-        </li>`;
+      if (score===0 && i>0) return '';
+      return `<li class="ranking-item ${i<3?'rank-'+(i+1):''}">
+        <div class="rank-number">${i+1}</div>
+        <span class="rank-name">${escHtml(s.name)}</span>
+        <span class="badge" style="background:${colorVar}20;color:${colorVar};font-weight:700;">${score}</span>
+      </li>`;
     }).join('');
   }
 
-  $('ranking-pos').innerHTML = rankList(byPos, id => posIn[id]||0, 'success') || '<li class="text-muted">Geen gegevens</li>';
-  $('ranking-neg').innerHTML = rankList(byNeg, id => negIn[id]||0, 'danger') || '<li class="text-muted">Geen gegevens</li>';
+  $('ranking-pos').innerHTML = rankItems(byPos, id=>posIn[id]||0, '#10b981') || '<li class="text-muted" style="padding:.5rem 0;">Geen gegevens</li>';
+  $('ranking-neg').innerHTML = rankItems(byNeg, id=>negIn[id]||0, '#f43f5e') || '<li class="text-muted" style="padding:.5rem 0;">Geen gegevens</li>';
 
-  // Stars
-  const stars = students.filter(s => statusMap[s.id] === 'Ster');
+  const stars = students.filter(s=>statusMap[s.id]==='Ster');
   $('stars-list').innerHTML = stars.length
-    ? stars.map(s => `<div class="flex items-center gap-1" style="margin-bottom:.5rem;">
+    ? stars.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
         <span class="badge badge-star">⭐ Ster</span>
         <strong>${escHtml(s.name)}</strong>
-        <span class="text-muted">(${posIn[s.id]} positief)</span>
+        <span class="text-muted">${posIn[s.id]} keuzes</span>
       </div>`).join('')
-    : '<p class="text-muted">Geen sterren gevonden.</p>';
+    : '<p class="text-muted">Geen sterren.</p>';
 
-  // Reciprocal
   $('reciprocal-list').innerHTML = reciprocalPairs.length
-    ? reciprocalPairs.map(p => `
-        <div class="flex items-center gap-1" style="margin-bottom:.5rem;">
-          <span class="badge badge-primary">🔁</span>
-          <strong>${escHtml(sMap[p.a].name)}</strong>
-          <span class="text-muted">↔</span>
-          <strong>${escHtml(sMap[p.b].name)}</strong>
-        </div>`).join('')
-    : '<p class="text-muted">Geen wederkerige keuzes gevonden.</p>';
+    ? reciprocalPairs.map(p=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
+        <span style="background:#dbeafe;color:#1d4ed8;padding:.15rem .55rem;border-radius:99px;font-size:.78rem;font-weight:700;">↔</span>
+        <strong>${escHtml(sMap[p.a].name)}</strong>
+        <span style="color:var(--text-muted);font-size:.9rem;">&amp;</span>
+        <strong>${escHtml(sMap[p.b].name)}</strong>
+      </div>`).join('')
+    : '<p class="text-muted">Geen wederkerige keuzes.</p>';
 
-  // Neglected
-  const neglected = students.filter(s => statusMap[s.id] === 'Verwaarloosd');
+  const neglected = students.filter(s=>statusMap[s.id]==='Verwaarloosd');
   $('neglected-list').innerHTML = neglected.length
-    ? neglected.map(s => `<div class="flex items-center gap-1" style="margin-bottom:.5rem;">
-        <span class="badge badge-neutral">👻 Verwaarloosd</span>
+    ? neglected.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
+        <span class="badge badge-neutral">👻</span>
         <strong>${escHtml(s.name)}</strong>
       </div>`).join('')
-    : '<p class="text-muted">Geen verwaarloosde leerlingen.</p>';
+    : '<p style="color:var(--success);font-weight:600;">✓ Geen verwaarloosde leerlingen.</p>';
 
-  // Isolated
-  const isolated = students.filter(s => statusMap[s.id] === 'Geïsoleerd');
+  const isolated = students.filter(s=>statusMap[s.id]==='Geïsoleerd');
   $('isolated-list').innerHTML = isolated.length
-    ? isolated.map(s => `<div class="flex items-center gap-1" style="margin-bottom:.5rem;">
-        <span class="badge badge-danger">🚨 Geïsoleerd</span>
+    ? isolated.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
+        <span class="badge badge-danger">🚨</span>
         <strong>${escHtml(s.name)}</strong>
       </div>`).join('')
-    : '<p class="text-muted" style="color:var(--success);">✓ Geen geïsoleerde leerlingen.</p>';
+    : '<p style="color:var(--success);font-weight:600;">✓ Geen geïsoleerde leerlingen.</p>';
 }
 
-// ---- Heatmap ----
-function renderHeatmap(data, a) {
+/* ---- Heatmap ---- */
+function renderHeatmap(data) {
   const { students, responses } = data;
   if (!students.length) { $('heatmap-inner').innerHTML = '<p class="text-muted" style="padding:1rem;">Nog geen gegevens.</p>'; return; }
 
-  // Build lookup
   const lookup = {};
-  responses.forEach(r => {
-    lookup[`${r.from_student}-${r.to_student}`] = r.choice_type;
-  });
+  responses.forEach(r => { lookup[`${r.from_student}-${r.to_student}`] = r.choice_type; });
+  const sn = s => s.name.split(' ')[0];
 
-  const shortName = s => s.name.split(' ')[0];
-
-  let html = '<table class="heatmap-table"><thead><tr><th class="row-header">Van ↓ / Naar →</th>';
-  students.forEach(s => {
-    html += `<th class="col-header" title="${escHtml(s.name)}">${escHtml(shortName(s))}</th>`;
-  });
+  let html = '<table class="heatmap-table"><thead><tr><th class="row-header">↓ Van / Naar →</th>';
+  students.forEach(s => { html += `<th class="col-header" title="${escHtml(s.name)}">${escHtml(sn(s))}</th>`; });
   html += '</tr></thead><tbody>';
 
   students.forEach(from => {
-    html += `<tr><th class="row-header" title="${escHtml(from.name)}">${escHtml(shortName(from))}</th>`;
+    html += `<tr><th class="row-header" title="${escHtml(from.name)}">${escHtml(sn(from))}</th>`;
     students.forEach(to => {
-      if (from.id === to.id) {
-        html += '<td class="cell-self">—</td>';
-      } else {
-        const val = lookup[`${from.id}-${to.id}`];
-        if (val === 'positive') html += `<td class="cell-pos" title="${escHtml(from.name)} → ${escHtml(to.name)}">+</td>`;
-        else if (val === 'negative') html += `<td class="cell-neg" title="${escHtml(from.name)} → ${escHtml(to.name)}">–</td>`;
-        else html += '<td></td>';
-      }
+      if (from.id===to.id) { html += '<td class="cell-self">—</td>'; return; }
+      const v = lookup[`${from.id}-${to.id}`];
+      html += v==='positive' ? `<td class="cell-pos" title="${escHtml(from.name)} → ${escHtml(to.name)}">+</td>`
+            : v==='negative' ? `<td class="cell-neg" title="${escHtml(from.name)} → ${escHtml(to.name)}">−</td>`
+            : '<td></td>';
     });
     html += '</tr>';
   });
@@ -699,177 +773,139 @@ function renderHeatmap(data, a) {
   $('heatmap-inner').innerHTML = html;
 }
 
-// ---- Clusters ----
+/* ---- Clusters ---- */
 function renderClusters(a) {
-  const { clusters, sMap, posIn, statusMap } = a;
-  const colors = ['#4f46e5','#0ea5e9','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+  const { clusters, sMap } = a;
+  const palette = ['#6366f1','#10b981','#f59e0b','#06b6d4','#f43f5e','#8b5cf6','#ec4899','#14b8a6'];
 
   if (!clusters.length) {
-    $('clusters-list').innerHTML = '<p class="text-muted">Onvoldoende gegevens voor clusteranalyse.</p>';
+    $('clusters-list').innerHTML = '<p class="text-muted">Onvoldoende data voor clusteranalyse.</p>';
     return;
   }
 
   $('clusters-list').innerHTML = clusters.map((cl, i) => {
-    const color = colors[i % colors.length];
+    const c = palette[i % palette.length];
     const members = cl.members.map(id => sMap[id]).filter(Boolean);
-    return `
-      <div class="card" style="margin-bottom:1rem;border-left:4px solid ${color};">
-        <div class="card-header">
-          <h4 style="margin:0;color:${color};">Cluster ${i+1} <span class="badge badge-neutral">${members.length} leerlingen</span></h4>
-        </div>
-        <div class="card-body" style="padding:.75rem 1rem;">
-          <div class="flex" style="flex-wrap:wrap;gap:.5rem;">
-            ${members.map(s => `
-              <span style="background:${color}18;color:${color};padding:.25rem .7rem;border-radius:99px;font-size:.85rem;font-weight:600;border:1px solid ${color}40;">
-                ${escHtml(s.name)}
-              </span>`).join('')}
-          </div>
-        </div>
-      </div>`;
+    return `<div class="cluster-card" style="border-left-color:${c};">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.35rem;">
+        <strong style="color:${c};">Groep ${i+1}</strong>
+        <span class="badge" style="background:${c}18;color:${c};">${members.length} leerlingen</span>
+      </div>
+      <div class="cluster-members">
+        ${members.map(s=>`<span class="member-chip" style="background:${c}18;color:${c};">${escHtml(s.name)}</span>`).join('')}
+      </div>
+    </div>`;
   }).join('');
 }
 
-// ---- Metrics table ----
+/* ---- Metrics ---- */
 function renderMetrics(a, sg) {
-  const { students, posIn, negIn, posOut, statusMap, recipCount, totalSubmitted, N } = a;
-
-  const sorted = [...students].sort((x,y) => (posIn[y.id]||0) - (posIn[x.id]||0));
+  const { students, posIn, negIn, posOut, statusMap, recipCount, totalSubmitted, N, totalPosPairs, reciprocityIndex } = a;
+  const sorted = [...students].sort((x,y)=>(posIn[y.id]||0)-(posIn[x.id]||0));
+  const badgeClass = { Ster:'badge-star', Geïsoleerd:'badge-danger', Afgewezen:'badge-danger', Verwaarloosd:'badge-neutral', Gemiddeld:'badge-primary' };
 
   $('metrics-tbody').innerHTML = sorted.map(s => {
-    const pos = posIn[s.id] || 0;
-    const neg = negIn[s.id] || 0;
-    const out = posOut[s.id] || 0;
-    const net = pos - neg;
-    const recip = out > 0 ? (recipCount[s.id] / out).toFixed(2) : '—';
+    const pos=posIn[s.id]||0, neg=negIn[s.id]||0, out=posOut[s.id]||0, net=pos-neg;
+    const recip = out>0 ? (recipCount[s.id]/out).toFixed(2) : '—';
     const st = statusMap[s.id];
-    const badges = {
-      'Ster': 'badge-star', 'Geïsoleerd': 'badge-danger', 'Afgewezen': 'badge-danger',
-      'Verwaarloosd': 'badge-neutral', 'Gemiddeld': 'badge-primary'
-    };
     return `<tr>
       <td><strong>${escHtml(s.name)}</strong></td>
       <td><span class="badge badge-success">+${pos}</span></td>
       <td><span class="badge badge-danger">-${neg}</span></td>
       <td>${out}</td>
-      <td><strong style="color:${net>0?'var(--success)':net<0?'var(--danger)':'var(--text)'}">${net > 0 ? '+' : ''}${net}</strong></td>
+      <td><strong style="color:${net>0?'var(--success)':net<0?'var(--danger)':'inherit'}">${net>0?'+':''}${net}</strong></td>
       <td>${recip}</td>
-      <td><span class="badge ${badges[st] || 'badge-neutral'}">${st}</span></td>
+      <td><span class="badge ${badgeClass[st]||'badge-neutral'}">${st}</span></td>
     </tr>`;
   }).join('');
 
-  // Group metrics
-  const avgPos = N > 0 ? (Object.values(posIn).reduce((s,v)=>s+v,0) / N).toFixed(1) : 0;
-  const avgNeg = N > 0 ? (Object.values(negIn).reduce((s,v)=>s+v,0) / N).toFixed(1) : 0;
-  const density = (N > 1 && totalSubmitted > 0)
-    ? (a.totalPosPairs / (N * (N - 1)) * 100).toFixed(1) + '%'
-    : '—';
+  const avgPos = N>0 ? (Object.values(posIn).reduce((s,v)=>s+v,0)/N).toFixed(1) : 0;
+  const avgNeg = N>0 ? (Object.values(negIn).reduce((s,v)=>s+v,0)/N).toFixed(1) : 0;
+  const density = N>1&&totalSubmitted>0 ? (totalPosPairs/(N*(N-1))*100).toFixed(1)+'%' : '—';
 
   $('group-metrics').innerHTML = `
-    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));">
-      <div class="stat-card"><span class="stat-icon">📈</span><span class="stat-value">${avgPos}</span><span class="stat-label">Gem. positieve keuzes ontvangen</span></div>
-      <div class="stat-card"><span class="stat-icon">📉</span><span class="stat-value">${avgNeg}</span><span class="stat-label">Gem. negatieve keuzes ontvangen</span></div>
+    <div class="stats-grid">
+      <div class="stat-card"><span class="stat-icon">📈</span><span class="stat-value">${avgPos}</span><span class="stat-label">Gem. + ontvangen</span></div>
+      <div class="stat-card"><span class="stat-icon">📉</span><span class="stat-value">${avgNeg}</span><span class="stat-label">Gem. − ontvangen</span></div>
       <div class="stat-card"><span class="stat-icon">🕸</span><span class="stat-value">${density}</span><span class="stat-label">Netwerkdichtheid</span></div>
-      <div class="stat-card"><span class="stat-icon">🔁</span><span class="stat-value">${(a.reciprocityIndex * 100).toFixed(0)}%</span><span class="stat-label">Wederkerigheidsindex</span></div>
+      <div class="stat-card"><span class="stat-icon">🔁</span><span class="stat-value">${(reciprocityIndex*100).toFixed(0)}%</span><span class="stat-label">Wederkerigheid</span></div>
     </div>`;
 }
 
-// ---- Status list ----
+/* ---- Status ---- */
 function renderStatus(data, a) {
   const { students, submissions } = data;
   const { submittedSet } = a;
-  const subMap = {};
-  (submissions || []).forEach(s => { subMap[s.student_id] = s.submitted_at; });
+  const subMap={};
+  (submissions||[]).forEach(s => { subMap[s.student_id]=s.submitted_at; });
 
-  const done = students.filter(s => submittedSet.has(s.id));
-  const pending = students.filter(s => !submittedSet.has(s.id));
+  const done = students.filter(s=>submittedSet.has(s.id));
+  const pending = students.filter(s=>!submittedSet.has(s.id));
 
   $('status-list').innerHTML = `
-    <div class="form-row" style="gap:1.5rem;align-items:flex-start;">
+    <div class="form-row" style="gap:2rem;align-items:flex-start;">
       <div>
-        <h3 style="margin-bottom:1rem;">✅ Ingevuld (${done.length})</h3>
+        <div class="section-label">
+          <div class="label-icon" style="background:#d1fae5;">✅</div>
+          <h3>Ingevuld (${done.length})</h3>
+        </div>
         <ul class="ranking-list">
-          ${done.map(s => `
-            <li class="ranking-item">
-              <span class="badge badge-success">✓</span>
-              <span class="rank-name">${escHtml(s.name)}</span>
-              <span class="text-small text-muted">${new Date(subMap[s.id]).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}</span>
-            </li>`).join('') || '<li class="text-muted" style="padding:.5rem 0;">Nog niemand</li>'}
+          ${done.map(s=>`<li class="ranking-item">
+            <span class="badge badge-success" style="width:26px;height:26px;justify-content:center;border-radius:50%;">✓</span>
+            <span class="rank-name">${escHtml(s.name)}</span>
+            <span class="text-small text-muted">${subMap[s.id] ? new Date(subMap[s.id]).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
+          </li>`).join('') || '<li class="text-muted" style="padding:.5rem 0;">Nog niemand ingevuld.</li>'}
         </ul>
       </div>
       <div>
-        <h3 style="margin-bottom:1rem;">⏳ Nog niet ingevuld (${pending.length})</h3>
+        <div class="section-label">
+          <div class="label-icon" style="background:#fef3c7;">⏳</div>
+          <h3>Nog niet ingevuld (${pending.length})</h3>
+        </div>
         <ul class="ranking-list">
-          ${pending.map(s => `
-            <li class="ranking-item" style="opacity:.65;">
-              <span class="badge badge-neutral">○</span>
-              <span class="rank-name">${escHtml(s.name)}</span>
-            </li>`).join('') || '<li style="padding:.5rem 0;color:var(--success);font-weight:600;">Iedereen heeft ingevuld! 🎉</li>'}
+          ${pending.map(s=>`<li class="ranking-item" style="opacity:.6;">
+            <span class="badge badge-neutral" style="width:26px;height:26px;justify-content:center;border-radius:50%;">○</span>
+            <span class="rank-name">${escHtml(s.name)}</span>
+          </li>`).join('') || '<li style="padding:.65rem 0;color:var(--success);font-weight:700;display:flex;align-items:center;gap:.5rem;">🎉 Iedereen heeft ingevuld!</li>'}
         </ul>
       </div>
     </div>`;
 }
 
-// =========================================================
-// TABS
-// =========================================================
+/* ---- Tabs ---- */
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', function() {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
     this.classList.add('active');
-    $('tab-' + this.dataset.tab).classList.add('active');
-
-    // Redraw graph if switching to it (container size may have changed)
-    if (this.dataset.tab === 'graph' && lastData) {
-      renderGraph(lastData, analyse(lastData));
-    }
+    $('tab-'+this.dataset.tab).classList.add('active');
+    if (this.dataset.tab==='graph' && lastData) renderGraph(lastData, analyse(lastData));
   });
 });
 
-// =========================================================
-// REFRESH + EXPORT
-// =========================================================
-async function refreshData() {
+/* ---- Refresh ---- */
+$('btn-refresh').addEventListener('click', async () => {
   try {
     const res = await fetch(`/api/sociograms/${token}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
-    lastData = data;
-    render(data);
-    showToast('Vernieuwd!', 'success');
-  } catch(e) {
-    showToast('Vernieuwen mislukt.', 'error');
-  }
-}
+    lastData=data; render(data);
+    showToast('Bijgewerkt!','success');
+  } catch(e) { showToast('Vernieuwen mislukt.','error'); }
+});
 
-[$('btn-refresh'), $('btn-refresh2')].forEach(b => b && b.addEventListener('click', refreshData));
-
-function exportCsv() {
-  window.open(`/api/sociograms/${token}/export`, '_blank');
-}
-[$('btn-export-csv'), $('btn-export-csv2')].forEach(b => b && b.addEventListener('click', exportCsv));
-
-// =========================================================
-// INIT
-// =========================================================
-loadResults();
-
-// Auto-refresh every 30s
+/* ---- Auto-refresh ---- */
 setInterval(() => {
-  if (lastData) {
-    fetch(`/api/sociograms/${token}`)
-      .then(r => r.json())
-      .then(data => { lastData = data; render(data); })
-      .catch(() => {});
-  }
+  if (!lastData) return;
+  fetch(`/api/sociograms/${token}`).then(r=>r.json()).then(d=>{ lastData=d; render(d); }).catch(()=>{});
 }, 30000);
 
-// Resize graph on window resize
 window.addEventListener('resize', () => {
-  if (lastData && document.getElementById('tab-graph').classList.contains('active')) {
-    renderGraph(lastData, analyse(lastData));
-  }
+  if (lastData && $('tab-graph').classList.contains('active')) renderGraph(lastData, analyse(lastData));
 });
+
+/* ---- Init ---- */
+loadResults();
 </script>
 </body>
 </html>

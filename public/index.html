@@ -6,7 +6,7 @@
   <title>Sociogram – Docentenpaneel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -16,7 +16,7 @@
   <div class="container">
     <div class="header-inner">
       <a href="/" class="logo">
-        <div class="logo-icon">◎</div>
+        <div class="logo-icon">⬡</div>
         Sociogram
       </a>
       <button class="btn btn-primary" id="btn-new-sociogram">
@@ -27,13 +27,29 @@
 </header>
 
 <!-- MAIN -->
-<main style="padding: 2rem 0 4rem;">
+<main style="padding: 2rem 0 5rem;">
   <div class="container">
 
-    <!-- Hero -->
-    <div style="margin-bottom:2rem;">
-      <h1 style="margin-bottom:.4rem;">Docentenpaneel</h1>
-      <p>Maak en beheer sociogrammen voor uw klassen. Bekijk sociale relaties en analyseer groepsdynamiek.</p>
+    <!-- Hero banner -->
+    <div class="dashboard-hero">
+      <div style="position:relative;">
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;">
+          <span style="font-size:2.2rem;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));">◎</span>
+          <div>
+            <h1 style="margin:0;font-size:1.8rem;">Docentenpaneel</h1>
+            <p style="margin:0;color:rgba(255,255,255,.75);font-size:.9rem;">Maak en beheer sociogrammen voor uw klassen</p>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap;">
+          <button class="btn" id="btn-hero-new"
+            style="background:rgba(255,255,255,.2);color:white;border-color:rgba(255,255,255,.35);backdrop-filter:blur(8px);">
+            + Nieuw sociogram
+          </button>
+          <span id="hero-count" style="display:flex;align-items:center;gap:.5rem;color:rgba(255,255,255,.7);font-size:.88rem;"></span>
+        </div>
+      </div>
+      <!-- Decorative dots -->
+      <div style="position:absolute;right:2rem;top:50%;transform:translateY(-50%);opacity:.15;font-size:4rem;pointer-events:none;user-select:none;">⬡⬡<br/>⬡⬡⬡</div>
     </div>
 
     <!-- Sociogram list -->
@@ -47,19 +63,24 @@
   </div>
 </main>
 
-<!-- MODAL: Nieuw sociogram -->
+<!-- ===================================================
+     MODAL: Nieuw sociogram
+     =================================================== -->
 <div id="modal-new" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modal-new-title">
-  <div class="modal">
+  <div class="modal" style="max-width:580px;">
     <div class="modal-header">
-      <h3 id="modal-new-title">Nieuw sociogram aanmaken</h3>
-      <button class="modal-close" id="modal-new-close" aria-label="Sluiten">×</button>
+      <div style="display:flex;align-items:center;gap:.65rem;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--primary),var(--violet));border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:1.1rem;box-shadow:0 4px 12px rgba(99,102,241,.3);">◎</div>
+        <h3 id="modal-new-title" style="margin:0;">Nieuw sociogram aanmaken</h3>
+      </div>
+      <button class="modal-close" id="modal-new-close" aria-label="Sluiten">✕</button>
     </div>
     <div class="modal-body">
       <form id="form-new-sociogram" novalidate>
 
         <div class="form-group">
-          <label for="sg-title">Titel van het sociogram</label>
-          <input type="text" id="sg-title" placeholder="bijv. Vriendschapsmeting groep 5A" required />
+          <label for="sg-title">Naam van het sociogram</label>
+          <input type="text" id="sg-title" placeholder="bijv. Vriendschapsmeting groep 5A – mei 2025" required />
         </div>
 
         <div class="form-row">
@@ -75,8 +96,8 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="sg-allow-neg" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
-              <input type="checkbox" id="sg-allow-neg" checked style="width:auto;" />
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-weight:600;">
+              <input type="checkbox" id="sg-allow-neg" checked style="width:auto;accent-color:var(--primary);" />
               Negatieve keuzes toestaan
             </label>
             <p class="form-hint">Leerlingen kunnen ook aangeven wie ze liever vermijden</p>
@@ -88,9 +109,17 @@
         </div>
 
         <div class="form-group">
-          <label for="sg-students">Leerlingen <span class="text-muted">(één per regel)</span></label>
-          <textarea id="sg-students" placeholder="Anna de Vries&#10;Bas Jansen&#10;Caro Smit&#10;David Bakker&#10;…" rows="8" required></textarea>
-          <p class="form-hint" id="student-count-hint">Voer de namen in van alle leerlingen in de klas.</p>
+          <label for="sg-students">
+            Leerlingen
+            <span class="text-muted" style="font-weight:400;">(één per regel)</span>
+          </label>
+          <textarea id="sg-students"
+            placeholder="Anna de Vries&#10;Bas Jansen&#10;Caro Smit&#10;David Bakker&#10;Emma Peters&#10;…"
+            rows="8" required></textarea>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.35rem;">
+            <p class="form-hint" id="student-count-hint" style="margin:0;">Voer de namen in van alle leerlingen in de klas.</p>
+            <span id="student-count-badge" class="badge badge-neutral" style="display:none;"></span>
+          </div>
         </div>
 
         <div id="form-error" class="alert alert-danger" style="display:none;"></div>
@@ -99,37 +128,51 @@
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-outline" id="modal-new-cancel">Annuleren</button>
-      <button type="button" class="btn btn-primary" id="form-submit">Sociogram aanmaken</button>
+      <button type="button" class="btn btn-primary" id="form-submit">
+        <span>Sociogram aanmaken</span>
+      </button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: Deellink -->
+<!-- ===================================================
+     MODAL: Deellink
+     =================================================== -->
 <div id="modal-share" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modal-share-title">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="modal-share-title">Sociogram aangemaakt!</h3>
-      <button class="modal-close" id="modal-share-close" aria-label="Sluiten">×</button>
+      <div style="display:flex;align-items:center;gap:.65rem;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--success),#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 4px 12px rgba(16,185,129,.3);">✓</div>
+        <h3 id="modal-share-title" style="margin:0;">Sociogram aangemaakt!</h3>
+      </div>
+      <button class="modal-close" id="modal-share-close" aria-label="Sluiten">✕</button>
     </div>
     <div class="modal-body">
-      <div class="alert alert-success">
-        Gelukt! Deel de onderstaande link met uw leerlingen.
+      <div class="alert alert-success" style="margin-bottom:1.25rem;">
+        <span style="font-size:1rem;">🎉</span>
+        <span>Het sociogram is klaar. Deel de leerlingenlink en bekijk de resultaten.</span>
       </div>
+
       <div class="form-group">
-        <label>Leerlingenlink</label>
-        <div class="flex gap-1" style="align-items:stretch;">
-          <input type="text" id="share-link-input" readonly style="border-radius:var(--radius) 0 0 var(--radius);flex:1;" />
-          <button class="btn btn-secondary copy-btn" id="copy-link-btn" style="border-radius:0 var(--radius) var(--radius) 0;min-width:90px;">
+        <label>🔗 Leerlingenlink</label>
+        <div style="display:flex;align-items:stretch;gap:.5rem;">
+          <input type="text" id="share-link-input" readonly
+            style="border-radius:var(--radius) 0 0 var(--radius);flex:1;background:#f8fafc;font-size:.85rem;" />
+          <button class="btn btn-secondary copy-btn" id="copy-link-btn"
+            style="border-radius:0 var(--radius) var(--radius) 0;min-width:100px;">
             Kopiëren
           </button>
         </div>
-        <p class="form-hint">Leerlingen openen deze link en vullen het sociogram in.</p>
+        <p class="form-hint">Deel deze link met uw leerlingen.</p>
       </div>
-      <div class="form-group">
-        <label>Resultaten bekijken</label>
-        <div class="flex gap-1" style="align-items:stretch;">
-          <input type="text" id="results-link-input" readonly style="border-radius:var(--radius) 0 0 var(--radius);flex:1;" />
-          <button class="btn btn-outline copy-btn" id="copy-results-btn" style="border-radius:0 var(--radius) var(--radius) 0;min-width:90px;">
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label>📊 Resultatenlink</label>
+        <div style="display:flex;align-items:stretch;gap:.5rem;">
+          <input type="text" id="results-link-input" readonly
+            style="border-radius:var(--radius) 0 0 var(--radius);flex:1;background:#f8fafc;font-size:.85rem;" />
+          <button class="btn btn-outline copy-btn" id="copy-results-btn"
+            style="border-radius:0 var(--radius) var(--radius) 0;min-width:100px;">
             Kopiëren
           </button>
         </div>
@@ -142,19 +185,24 @@
   </div>
 </div>
 
-<!-- MODAL: Bevestiging verwijderen -->
+<!-- ===================================================
+     MODAL: Verwijderen
+     =================================================== -->
 <div id="modal-delete" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
-  <div class="modal" style="max-width:400px;">
+  <div class="modal" style="max-width:420px;">
     <div class="modal-header">
-      <h3>Sociogram verwijderen?</h3>
-      <button class="modal-close" id="modal-delete-close">×</button>
+      <div style="display:flex;align-items:center;gap:.65rem;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--danger),#e11d48);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:1rem;">🗑</div>
+        <h3 style="margin:0;">Sociogram verwijderen?</h3>
+      </div>
+      <button class="modal-close" id="modal-delete-close">✕</button>
     </div>
     <div class="modal-body">
-      <p>Weet u zeker dat u dit sociogram en alle bijbehorende gegevens wilt verwijderen? Dit kan niet ongedaan worden gemaakt.</p>
+      <p>Weet u zeker dat u dit sociogram en <strong>alle bijbehorende gegevens</strong> wilt verwijderen? Dit kan niet ongedaan worden gemaakt.</p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" id="modal-delete-cancel">Annuleren</button>
-      <button class="btn btn-danger" id="modal-delete-confirm">Verwijderen</button>
+      <button class="btn btn-danger" id="modal-delete-confirm">Definitief verwijderen</button>
     </div>
   </div>
 </div>
@@ -162,14 +210,10 @@
 <div id="toast-container"></div>
 
 <script>
-/* =========================================================
-   Teacher Dashboard – Vanilla JS
-   ========================================================= */
-
 const $ = id => document.getElementById(id);
 let deleteToken = null;
 
-// ---- Toast ----
+/* ---- Toast ---- */
 function showToast(msg, type = '') {
   const el = document.createElement('div');
   el.className = 'toast ' + type;
@@ -178,30 +222,30 @@ function showToast(msg, type = '') {
   setTimeout(() => el.remove(), 3500);
 }
 
-// ---- Modal helpers ----
-function openModal(id) {
-  $(id).style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(id) {
-  $(id).style.display = 'none';
-  document.body.style.overflow = '';
-}
+/* ---- Modal ---- */
+function openModal(id)  { $(id).style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+function closeModal(id) { $(id).style.display = 'none';  document.body.style.overflow = ''; }
 
-// ---- Load sociograms ----
+/* ---- Load sociograms ---- */
 async function loadSociograms() {
   const container = $('sociogram-list');
   try {
     const res = await fetch('/api/sociograms');
     const list = await res.json();
 
+    const heroCount = $('hero-count');
+    if (heroCount) heroCount.textContent = list.length
+      ? `${list.length} sociogram${list.length === 1 ? '' : 'men'} actief`
+      : '';
+
     if (!list.length) {
       container.innerHTML = `
-        <div class="empty-state card">
-          <div class="empty-state-icon">◎</div>
-          <h3>Nog geen sociogrammen</h3>
-          <p style="margin:.5rem 0 1.5rem;">Klik op "+ Nieuw sociogram" om te beginnen.</p>
-          <button class="btn btn-primary" onclick="openModal('modal-new')">+ Nieuw sociogram</button>
+        <div style="background:var(--white);border-radius:var(--radius-xl);border:2px dashed var(--border);
+          padding:4rem 2rem;text-align:center;">
+          <div style="font-size:4rem;margin-bottom:1rem;opacity:.3;filter:grayscale(.5);">◎</div>
+          <h2 style="margin-bottom:.5rem;color:var(--text);">Nog geen sociogrammen</h2>
+          <p style="margin-bottom:2rem;">Maak uw eerste sociogram aan en deel de link met uw leerlingen.</p>
+          <button class="btn btn-primary btn-lg" onclick="openModal('modal-new')">+ Nieuw sociogram aanmaken</button>
         </div>`;
       return;
     }
@@ -216,41 +260,49 @@ async function loadSociograms() {
 }
 
 function renderSociogramCard(sg) {
-  const pct = sg.student_count ? Math.round(sg.response_count / sg.student_count * 100) : 0;
-  const date = new Date(sg.created_at).toLocaleDateString('nl-NL', { day:'numeric', month:'short', year:'numeric' });
+  const pct  = sg.student_count ? Math.round(sg.response_count / sg.student_count * 100) : 0;
+  const date = new Date(sg.created_at).toLocaleDateString('nl-NL', {day:'numeric',month:'short',year:'numeric'});
   const studentLink = `${location.origin}/student.html?token=${sg.token}`;
   const resultsLink = `${location.origin}/results.html?token=${sg.token}`;
+  const barColor = pct === 100 ? '#10b981' : pct >= 60 ? '#6366f1' : '#f59e0b';
 
   return `
-    <div class="card" data-token="${sg.token}">
-      <div class="card-header">
-        <div style="min-width:0;">
-          <div class="flex items-center gap-1" style="flex-wrap:wrap;margin-bottom:.3rem;">
-            <h3 style="margin:0;">${escHtml(sg.title)}</h3>
-            <span class="badge badge-primary">${escHtml(sg.class_name)}</span>
+    <div class="sg-card" data-token="${sg.token}">
+      <div class="sg-card-header">
+        <div style="min-width:0;flex:1;">
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.35rem;">
+            <h3 style="margin:0;color:var(--text);">${escHtml(sg.title)}</h3>
+            <span class="badge badge-purple">${escHtml(sg.class_name)}</span>
+            ${sg.allow_negative ? '<span class="badge badge-neutral" style="font-size:.72rem;">Neg. keuzes</span>' : ''}
           </div>
-          <span class="text-muted">Aangemaakt op ${date} · Code: <strong>${sg.token}</strong></span>
+          <span class="text-muted" style="font-size:.82rem;">
+            Aangemaakt op ${date}
+            <span style="margin:0 .4rem;opacity:.4;">·</span>
+            Code: <code style="background:var(--neutral-light);padding:.1rem .4rem;border-radius:5px;font-size:.82rem;font-weight:700;letter-spacing:.05em;">${sg.token}</code>
+          </span>
         </div>
-        <div class="flex gap-1" style="flex-shrink:0;flex-wrap:wrap;">
-          <a href="${resultsLink}" class="btn btn-secondary btn-sm" target="_blank">Resultaten</a>
-          <button class="btn btn-outline btn-sm copy-share-btn" data-link="${studentLink}">Link kopiëren</button>
-          <button class="btn btn-outline btn-sm btn-icon delete-btn" data-token="${sg.token}" title="Verwijderen" aria-label="Verwijderen">🗑</button>
+        <div style="display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap;align-items:center;">
+          <a href="${resultsLink}" class="btn btn-secondary btn-sm" target="_blank">📊 Resultaten</a>
+          <button class="btn btn-outline btn-sm copy-share-btn" data-link="${studentLink}">🔗 Link kopiëren</button>
+          <button class="btn btn-outline btn-sm btn-icon delete-btn" data-token="${sg.token}"
+            title="Verwijderen" aria-label="Verwijderen"
+            style="color:var(--danger);border-color:var(--danger-light);">🗑</button>
         </div>
       </div>
-      <div class="card-body" style="padding-top:1rem;padding-bottom:1rem;">
-        <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-          <div style="flex:1;min-width:200px;">
-            <div class="flex justify-between" style="margin-bottom:.35rem;font-size:.85rem;">
-              <span class="text-muted">Ingevuld</span>
-              <strong>${sg.response_count} / ${sg.student_count} leerlingen (${pct}%)</strong>
+      <div class="sg-card-body">
+        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:.4rem;font-size:.85rem;">
+              <span class="text-muted">Voortgang</span>
+              <strong style="color:${barColor};">${sg.response_count} / ${sg.student_count} ingevuld (${pct}%)</strong>
             </div>
             <div class="progress-bar-wrap">
-              <div class="progress-bar-fill" style="width:${pct}%;background:${pct===100?'var(--success)':'var(--primary)'}"></div>
+              <div class="progress-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${barColor},${barColor}cc);"></div>
             </div>
           </div>
-          <div class="flex gap-1" style="flex-shrink:0;">
+          <div style="display:flex;gap:.45rem;flex-shrink:0;">
             <span class="badge badge-neutral">${sg.student_count} leerlingen</span>
-            ${sg.allow_negative ? '<span class="badge badge-warning">Neg. keuzes aan</span>' : ''}
+            ${pct === 100 ? '<span class="badge badge-success">✓ Volledig</span>' : ''}
           </div>
         </div>
       </div>
@@ -261,59 +313,57 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ---- Event delegation for cards ----
+/* ---- Card click delegation ---- */
 $('sociogram-list').addEventListener('click', e => {
   const copyBtn = e.target.closest('.copy-share-btn');
-  if (copyBtn) {
-    copyToClipboard(copyBtn.dataset.link);
-    return;
-  }
+  if (copyBtn) { copyToClipboard(copyBtn.dataset.link); return; }
   const delBtn = e.target.closest('.delete-btn');
-  if (delBtn) {
-    deleteToken = delBtn.dataset.token;
-    openModal('modal-delete');
-  }
+  if (delBtn) { deleteToken = delBtn.dataset.token; openModal('modal-delete'); }
 });
 
-// ---- New sociogram button ----
+/* ---- New sociogram ---- */
 $('btn-new-sociogram').addEventListener('click', () => openModal('modal-new'));
+$('btn-hero-new').addEventListener('click', () => openModal('modal-new'));
 $('modal-new-close').addEventListener('click', () => closeModal('modal-new'));
 $('modal-new-cancel').addEventListener('click', () => closeModal('modal-new'));
 
-// ---- Toggle negative count field ----
 $('sg-allow-neg').addEventListener('change', function() {
   $('neg-count-group').style.display = this.checked ? '' : 'none';
 });
 
-// ---- Live student count ----
 $('sg-students').addEventListener('input', function() {
-  const names = this.value.split('\n').map(s=>s.trim()).filter(Boolean);
-  $('student-count-hint').textContent = names.length
-    ? `${names.length} leerling${names.length===1?'':'en} ingevoerd.`
-    : 'Voer de namen in van alle leerlingen in de klas.';
+  const names = this.value.split('\n').map(s => s.trim()).filter(Boolean);
+  const badge = $('student-count-badge');
+  const hint = $('student-count-hint');
+  if (names.length) {
+    badge.textContent = names.length + ' leerlingen';
+    badge.style.display = 'inline-flex';
+    badge.className = 'badge ' + (names.length >= 2 ? 'badge-success' : 'badge-warning');
+    hint.textContent = names.length >= 2 ? 'Voldoende leerlingen.' : 'Minimaal 2 leerlingen nodig.';
+  } else {
+    badge.style.display = 'none';
+    hint.textContent = 'Voer de namen in van alle leerlingen in de klas.';
+  }
 });
 
-// ---- Create sociogram ----
 $('form-submit').addEventListener('click', async () => {
-  const title = $('sg-title').value.trim();
-  const class_name = $('sg-class').value.trim();
-  const max_positive = parseInt($('sg-max-pos').value) || 3;
-  const max_negative = parseInt($('sg-max-neg').value) || 1;
+  const title       = $('sg-title').value.trim();
+  const class_name  = $('sg-class').value.trim();
+  const max_positive  = parseInt($('sg-max-pos').value) || 3;
+  const max_negative  = parseInt($('sg-max-neg').value) || 1;
   const allow_negative = $('sg-allow-neg').checked;
-  const studentText = $('sg-students').value;
-  const students = studentText.split('\n').map(s=>s.trim()).filter(Boolean);
-
+  const students    = $('sg-students').value.split('\n').map(s => s.trim()).filter(Boolean);
   const errEl = $('form-error');
   errEl.style.display = 'none';
 
   if (!title || !class_name || students.length < 2) {
-    errEl.textContent = 'Vul de titel, klasnaam en minimaal 2 leerlingnamen in.';
+    errEl.textContent = 'Vul alle velden in en voeg minimaal 2 leerlingen toe.';
     errEl.style.display = 'flex';
     return;
   }
 
   const btn = $('form-submit');
-  btn.textContent = 'Bezig…';
+  btn.innerHTML = '<span class="spinner" style="width:18px;height:18px;margin:0;border-width:2px;"></span> Aanmaken…';
   btn.disabled = true;
 
   try {
@@ -328,7 +378,6 @@ $('form-submit').addEventListener('click', async () => {
     closeModal('modal-new');
     resetNewForm();
 
-    // Show share modal
     const studentLink = `${location.origin}/student.html?token=${data.token}`;
     const resultsLink = `${location.origin}/results.html?token=${data.token}`;
     $('share-link-input').value = studentLink;
@@ -340,7 +389,7 @@ $('form-submit').addEventListener('click', async () => {
     errEl.textContent = e.message;
     errEl.style.display = 'flex';
   } finally {
-    btn.textContent = 'Sociogram aanmaken';
+    btn.innerHTML = '<span>Sociogram aanmaken</span>';
     btn.disabled = false;
   }
 });
@@ -354,16 +403,17 @@ function resetNewForm() {
   $('sg-students').value = '';
   $('form-error').style.display = 'none';
   $('student-count-hint').textContent = 'Voer de namen in van alle leerlingen in de klas.';
+  $('student-count-badge').style.display = 'none';
   $('neg-count-group').style.display = '';
 }
 
-// ---- Share modal ----
+/* ---- Share modal ---- */
 $('modal-share-close').addEventListener('click', () => closeModal('modal-share'));
 $('modal-share-close2').addEventListener('click', () => closeModal('modal-share'));
 $('copy-link-btn').addEventListener('click', () => copyToClipboard($('share-link-input').value, 'copy-link-btn'));
 $('copy-results-btn').addEventListener('click', () => copyToClipboard($('results-link-input').value, 'copy-results-btn'));
 
-// ---- Delete modal ----
+/* ---- Delete modal ---- */
 $('modal-delete-close').addEventListener('click', () => closeModal('modal-delete'));
 $('modal-delete-cancel').addEventListener('click', () => closeModal('modal-delete'));
 $('modal-delete-confirm').addEventListener('click', async () => {
@@ -373,22 +423,28 @@ $('modal-delete-confirm').addEventListener('click', async () => {
     closeModal('modal-delete');
     showToast('Sociogram verwijderd.', 'success');
     loadSociograms();
-  } catch(e) {
-    showToast('Verwijderen mislukt.', 'error');
-  }
+  } catch(e) { showToast('Verwijderen mislukt.', 'error'); }
   deleteToken = null;
 });
 
-// ---- Close modals on backdrop click ----
+/* ---- Close on backdrop click ---- */
 document.querySelectorAll('.modal-backdrop').forEach(el => {
-  el.addEventListener('click', function(e) {
-    if (e.target === this) closeModal(this.id);
-  });
+  el.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
 });
 
-// ---- Copy to clipboard ----
+/* ---- Copy ---- */
 function copyToClipboard(text, btnId) {
-  navigator.clipboard.writeText(text).then(() => {
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    showToast('Link gekopieerd!', 'success');
+  };
+  navigator.clipboard?.writeText(text).then(() => {
     showToast('Link gekopieerd!', 'success');
     if (btnId) {
       const btn = $(btnId);
@@ -397,24 +453,11 @@ function copyToClipboard(text, btnId) {
       btn.classList.add('copied');
       setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
     }
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
-    showToast('Link gekopieerd!', 'success');
-  });
+  }).catch(fallback) ?? fallback();
 }
 
-// ---- Init ----
+/* ---- Init ---- */
 loadSociograms();
-
-// Auto-refresh every 30 seconds
 setInterval(loadSociograms, 30000);
 </script>
 </body>
