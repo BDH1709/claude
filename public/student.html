@@ -327,6 +327,7 @@ async function selectSelf(studentId) {
 
   selectedStudentId = studentId;
   const student = sociogramData.students.find(s => s.id === studentId);
+  if (!student) { showView('view-error'); $('error-msg').textContent = 'Leerling niet gevonden.'; return; }
   $('greeting-name').textContent = `Hallo, ${student.name}!`;
 
   positiveChoices.clear();

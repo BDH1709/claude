@@ -512,9 +512,12 @@ function detectClusters(students, responses) {
 /* =========================================================
    RENDER
    ========================================================= */
+let cachedAnalysis = null; // cache so cluster results stay stable across tabs
+
 function render(data) {
   const { sociogram, students } = data;
-  const a = analyse(data);
+  cachedAnalysis = analyse(data);
+  const a = cachedAnalysis;
 
   $('result-title').textContent = sociogram.title;
   $('result-class').textContent = sociogram.class_name;
@@ -879,33 +882,44 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
     this.classList.add('active');
     $('tab-'+this.dataset.tab).classList.add('active');
-    if (this.dataset.tab==='graph' && lastData) renderGraph(lastData, analyse(lastData));
+    if (this.dataset.tab==='graph' && lastData && cachedAnalysis) renderGraph(lastData, cachedAnalysis);
   });
 });
 
 /* ---- Refresh ---- */
-$('btn-refresh').addEventListener('click', async () => {
+async function refreshData(silent) {
   try {
-    const res = await fetch(`/api/sociograms/${token}`);
+    const res  = await fetch(`/api/sociograms/${token}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
-    lastData=data; render(data);
-    showToast('Bijgewerkt!','success');
-  } catch(e) { showToast('Vernieuwen mislukt.','error'); }
-});
+    lastData = data;
+    render(data);
+    if (!silent) showToast('Bijgewerkt!', 'success');
+  } catch(e) { if (!silent) showToast('Vernieuwen mislukt.', 'error'); }
+}
 
-/* ---- Auto-refresh ---- */
-setInterval(() => {
-  if (!lastData) return;
-  fetch(`/api/sociograms/${token}`).then(r=>r.json()).then(d=>{ lastData=d; render(d); }).catch(()=>{});
-}, 30000);
+$('btn-refresh').addEventListener('click', () => refreshData(false));
+
+/* ---- Real-time SSE ---- */
+let sseRetry = 1000;
+function connectSSE() {
+  if (!token) return;
+  const es = new EventSource(`/api/sociograms/${token}/events`);
+  es.onmessage = () => refreshData(true);
+  es.onerror = () => {
+    es.close();
+    // Exponential back-off, capped at 30s
+    setTimeout(() => { sseRetry = Math.min(sseRetry * 2, 30000); connectSSE(); }, sseRetry);
+  };
+  es.onopen = () => { sseRetry = 1000; };
+}
 
 window.addEventListener('resize', () => {
-  if (lastData && $('tab-graph').classList.contains('active')) renderGraph(lastData, analyse(lastData));
+  if (lastData && cachedAnalysis && $('tab-graph').classList.contains('active')) renderGraph(lastData, cachedAnalysis);
 });
 
 /* ---- Init ---- */
-loadResults();
+loadResults().then(() => connectSSE());
 </script>
 </body>
 </html>

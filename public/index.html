@@ -434,17 +434,7 @@ document.querySelectorAll('.modal-backdrop').forEach(el => {
 
 /* ---- Copy ---- */
 function copyToClipboard(text, btnId) {
-  const fallback = () => {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0;';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
-    showToast('Link gekopieerd!', 'success');
-  };
-  navigator.clipboard?.writeText(text).then(() => {
+  function onSuccess() {
     showToast('Link gekopieerd!', 'success');
     if (btnId) {
       const btn = $(btnId);
@@ -453,7 +443,24 @@ function copyToClipboard(text, btnId) {
       btn.classList.add('copied');
       setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
     }
-  }).catch(fallback) ?? fallback();
+  }
+  function fallback() {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      onSuccess();
+    } catch (_) { showToast('Kopiëren mislukt.', 'error'); }
+  }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(fallback);
+  } else {
+    fallback();
+  }
 }
 
 /* ---- Init ---- */
