@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="/style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
   <style>
-    /* --- Results page extras --- */
     .results-hero {
       background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 70%, #4f46e5 100%);
       padding: 2.5rem 0 4rem;
@@ -40,22 +39,6 @@
       margin-bottom: 1rem;
     }
 
-    /* Floating actions bar */
-    .actions-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: .75rem;
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      padding: 1rem 1.5rem;
-      margin-bottom: 1.75rem;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-    }
-
-    /* Graph tooltip */
     #graph-tooltip {
       position: fixed;
       background: rgba(15,23,42,.95);
@@ -66,14 +49,13 @@
       font-size: .85rem;
       pointer-events: none;
       z-index: 9999;
-      max-width: 230px;
+      max-width: 250px;
       display: none;
       border: 1px solid rgba(255,255,255,.1);
       box-shadow: 0 8px 32px rgba(0,0,0,.4);
       line-height: 1.6;
     }
 
-    /* Filter buttons */
     .filter-group {
       display: flex; gap: .35rem;
       background: var(--neutral-light);
@@ -98,31 +80,128 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* Rank table extras */
     .section-label {
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: .6rem; margin-bottom: 1rem;
     }
     .section-label h3 { margin: 0; }
     .section-label .label-icon {
-      width: 32px; height: 32px;
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
     }
 
-    /* Graph legend bar */
     .graph-legend-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem 1.1rem;
+      display: flex; flex-wrap: wrap; gap: .5rem 1.1rem;
       padding: .75rem 1rem;
       background: rgba(255,255,255,.06);
       border-top: 1px solid rgba(255,255,255,.08);
     }
     .graph-legend-bar .legend-item { color: rgba(255,255,255,.65); }
+
+    /* Per-student tab */
+    .student-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: .6rem;
+      margin-bottom: 1.5rem;
+    }
+    .student-sel-btn {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .6rem .9rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: .85rem;
+      font-weight: 500;
+      transition: var(--transition);
+      text-align: left;
+      color: var(--text);
+    }
+    .student-sel-btn:hover { border-color: var(--primary); background: #f5f3ff; }
+    .student-sel-btn.active {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .student-sel-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    .student-profile-card {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .student-profile-header {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+    }
+    .student-avatar {
+      width: 56px; height: 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 800; color: white;
+      flex-shrink: 0;
+    }
+    .student-metrics-mini {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; margin-bottom: 1.25rem;
+    }
+    @media (max-width: 600px) { .student-metrics-mini { grid-template-columns: repeat(2, 1fr); } }
+    .mini-metric {
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .65rem .75rem; text-align: center;
+    }
+    .mini-metric .val { font-size: 1.4rem; font-weight: 800; line-height: 1; }
+    .mini-metric .lbl { font-size: .72rem; color: var(--text-muted); margin-top: .25rem; }
+
+    .choice-columns {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+    @media (max-width: 600px) { .choice-columns { grid-template-columns: 1fr; } }
+    .choice-col { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+    .choice-col h4 { margin: 0 0 .75rem; font-size: .9rem; }
+    .choice-pill {
+      display: inline-flex; align-items: center; gap: .35rem;
+      padding: .3rem .75rem; border-radius: 99px;
+      font-size: .82rem; font-weight: 600; margin: .2rem;
+    }
+
+    /* Score bar chart */
+    .score-bar-wrap { margin: .35rem 0; }
+    .score-bar-track {
+      height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 3px;
+    }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+
+    /* Detail modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,.65);
+      backdrop-filter: blur(4px); z-index: 10000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: white; border-radius: var(--radius-lg);
+      width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,.35);
+      transform: translateY(24px); transition: transform .2s;
+    }
+    .modal-overlay.open .modal-box { transform: none; }
+    .modal-head {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .75rem;
+    }
+    .modal-body { padding: 1.25rem 1.5rem; }
+    .modal-close {
+      margin-left: auto; background: none; border: none;
+      font-size: 1.4rem; cursor: pointer; color: var(--text-muted);
+      line-height: 1; padding: .2rem .4rem; border-radius: 6px;
+    }
+    .modal-close:hover { background: var(--border); }
   </style>
 </head>
 <body>
@@ -161,7 +240,6 @@
 <!-- MAIN RESULTS -->
 <div id="view-results" style="display:none;">
 
-  <!-- Hero -->
   <div class="results-hero">
     <div class="container">
       <div class="hero-badge">📊 Analyse resultaten</div>
@@ -195,18 +273,17 @@
   <main style="padding:2rem 0 5rem;">
   <div class="container">
 
-    <!-- Stats -->
     <div class="stats-grid" id="stats-grid"></div>
 
-    <!-- Tabs card -->
     <div class="card">
       <div class="card-header" style="border-bottom:none;padding-bottom:.5rem;">
-        <nav class="tab-nav" id="tab-nav" style="border:none;flex:1;">
+        <nav class="tab-nav" id="tab-nav" style="border:none;flex:1;flex-wrap:wrap;">
           <button class="tab-btn active" data-tab="graph">🕸 Netwerk</button>
           <button class="tab-btn" data-tab="ranking">🏆 Ranglijst</button>
           <button class="tab-btn" data-tab="heatmap">🔲 Keuzetabel</button>
           <button class="tab-btn" data-tab="clusters">👥 Clusters</button>
           <button class="tab-btn" data-tab="metrics">📊 Statistieken</button>
+          <button class="tab-btn" data-tab="perstudent">👤 Per Leerling</button>
           <button class="tab-btn" data-tab="status">✅ Deelname</button>
         </nav>
       </div>
@@ -221,23 +298,22 @@
               <button class="filter-btn" data-filter="positive">💚 Positief</button>
               <button class="filter-btn" data-filter="negative">🔴 Negatief</button>
             </div>
-            <p style="font-size:.8rem;margin:0;">Sleep nodes · Scroll = zoom · Hover = details</p>
+            <p style="font-size:.8rem;margin:0;">Sleep nodes · Scroll = zoom · Hover = details · Klik = profiel</p>
           </div>
 
           <div id="graph-container" style="height:540px;position:relative;">
             <svg id="graph-svg"></svg>
-            <!-- Controls overlay -->
             <div class="graph-controls-overlay">
               <button class="graph-ctrl-btn" id="zoom-in" title="Inzoomen">+</button>
               <button class="graph-ctrl-btn" id="zoom-out" title="Uitzoomen">−</button>
               <button class="graph-ctrl-btn" id="zoom-reset" title="Reset">⌖</button>
             </div>
-            <!-- Legend overlay -->
-            <div class="graph-legend-bar" style="position:absolute;bottom:0;left:0;right:0;">
+            <div class="graph-legend-bar" style="position:absolute;bottom:0;left:0;right:0;flex-wrap:wrap;">
               <span class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Ster</span>
               <span class="legend-item"><span class="legend-dot" style="background:#10b981;"></span>Populair</span>
               <span class="legend-item"><span class="legend-dot" style="background:#6366f1;"></span>Gemiddeld</span>
-              <span class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Verwaarloosd</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Controversieel</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span>Verwaarloosd</span>
               <span class="legend-item"><span class="legend-dot" style="background:#f43f5e;"></span>Afgewezen/Geïsoleerd</span>
               <span class="legend-item"><span style="display:inline-block;width:20px;height:2px;background:#10b981;border-radius:2px;"></span>Positief</span>
               <span class="legend-item"><span style="display:inline-block;width:20px;height:2px;background:#f43f5e;border-radius:2px;border-top:2px dashed #f43f5e;"></span>Negatief</span>
@@ -266,13 +342,21 @@
 
           <hr class="divider" />
 
-          <div class="form-row" style="gap:2rem;align-items:flex-start;">
+          <div class="form-row" style="gap:2rem;align-items:flex-start;flex-wrap:wrap;">
             <div>
               <div class="section-label">
                 <div class="label-icon" style="background:#fef3c7;">⭐</div>
                 <h3>Sterren</h3>
               </div>
               <div id="stars-list"></div>
+            </div>
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#fff7ed;">🔥</div>
+                <h3>Controversieel</h3>
+              </div>
+              <p style="font-size:.85rem;margin-bottom:.75rem;">Zowel veel positief als negatief gekozen</p>
+              <div id="controversial-list"></div>
             </div>
             <div>
               <div class="section-label">
@@ -291,7 +375,7 @@
                 <div class="label-icon" style="background:#f1f5f9;">👻</div>
                 <h3>Verwaarloosd</h3>
               </div>
-              <p style="font-size:.85rem;margin-bottom:.75rem;">Weinig tot geen positieve keuzes ontvangen</p>
+              <p style="font-size:.85rem;margin-bottom:.75rem;">Nauwelijks gezien door de groep (laag zichtbaar)</p>
               <div id="neglected-list"></div>
             </div>
             <div>
@@ -319,23 +403,30 @@
 
         <!-- ========== TAB: CLUSTERS ========== -->
         <div class="tab-content" id="tab-clusters">
-          <p style="margin-bottom:1.5rem;">Groepen zijn berekend op basis van positieve verbindingen in de klas (label propagation).</p>
+          <p style="margin-bottom:1.5rem;">Subgroepen berekend via label propagation op positieve verbindingen.</p>
           <div id="clusters-list" style="display:flex;flex-direction:column;gap:.85rem;"></div>
         </div>
 
         <!-- ========== TAB: METRICS ========== -->
         <div class="tab-content" id="tab-metrics">
-          <p style="margin-bottom:1.25rem;">Gedetailleerde sociometrische statistieken per leerling.</p>
+          <p style="margin-bottom:.75rem;">Sociometrische statistieken per leerling. Klik een rij voor het volledige profiel.</p>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:1.25rem;">
+            <strong>SP</strong> = Sociale Voorkeur (+ ontvangen − − ontvangen) &nbsp;·&nbsp;
+            <strong>Impact</strong> = totale zichtbaarheid (+ ontvangen + − ontvangen) &nbsp;·&nbsp;
+            <strong>SI</strong> = Sociometrisch Index SP/(N−1), bereik −1…+1
+          </p>
           <div style="overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);">
             <table>
               <thead>
                 <tr>
                   <th>Leerling</th>
-                  <th title="Positieve keuzes ontvangen">+ Ontvangen</th>
-                  <th title="Negatieve keuzes ontvangen">- Ontvangen</th>
-                  <th title="Positieve keuzes gegeven">+ Gegeven</th>
-                  <th title="Net score">Netto</th>
-                  <th title="Wederk.">Wederkerigheid</th>
+                  <th title="Positieve nominaties ontvangen">+ Ontv.</th>
+                  <th title="Negatieve nominaties ontvangen">− Ontv.</th>
+                  <th title="Positieve nominaties gegeven">+ Gegeven</th>
+                  <th title="Sociale Voorkeur = pos_in − neg_in">SP</th>
+                  <th title="Sociale Impact = pos_in + neg_in">Impact</th>
+                  <th title="Sociometrisch Index = SP / (N−1)">SI</th>
+                  <th title="Wederkerigheid">Wederker.</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -347,27 +438,49 @@
           <div id="group-metrics"></div>
         </div>
 
+        <!-- ========== TAB: PER LEERLING ========== -->
+        <div class="tab-content" id="tab-perstudent">
+          <p style="margin-bottom:1.25rem;">Selecteer een leerling om het volledige sociometrische profiel te bekijken.</p>
+          <div class="student-selector" id="student-selector"></div>
+          <div id="student-profile-area"></div>
+        </div>
+
         <!-- ========== TAB: STATUS ========== -->
         <div class="tab-content" id="tab-status">
           <p style="margin-bottom:1.5rem;">Overzicht van welke leerlingen het formulier al hebben ingevuld. Ververst automatisch.</p>
           <div id="status-list"></div>
         </div>
 
-      </div><!-- /card-body -->
-    </div><!-- /card -->
+      </div>
+    </div>
 
   </div>
   </main>
 </div>
 
-<!-- Graph tooltip (fixed position) -->
+<!-- Graph tooltip -->
 <div id="graph-tooltip"></div>
+
+<!-- Student detail modal -->
+<div class="modal-overlay" id="student-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="student-avatar" id="modal-avatar" style="width:44px;height:44px;font-size:1.1rem;border-radius:10px;"></div>
+      <div>
+        <div style="font-weight:800;font-size:1.1rem;" id="modal-name"></div>
+        <div id="modal-status-badge"></div>
+      </div>
+      <button class="modal-close" id="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
 
 <div id="toast-container"></div>
 
 <script>
 /* =========================================================
-   Results Page – D3 + Advanced Analysis
+   Results Page – D3 + Advanced Sociometric Analysis
    ========================================================= */
 
 const $ = id => document.getElementById(id);
@@ -378,6 +491,7 @@ let simulation = null;
 let currentFilter = 'all';
 let zoomBehavior = null;
 let svgRef = null;
+let selectedStudentId = null;
 
 function showView(id) {
   ['view-loading','view-error','view-results'].forEach(v => {
@@ -420,8 +534,15 @@ async function loadResults() {
 }
 
 /* =========================================================
-   ANALYSIS
+   ANALYSIS  (Coie-Dodge z-score classification)
    ========================================================= */
+function arrMean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function arrStd(arr, m) {
+  if (arr.length < 2) return 1;
+  const v = arr.reduce((s,x)=>s+(x-m)**2,0) / (arr.length-1);
+  return Math.sqrt(v) || 1;
+}
+
 function analyse(data) {
   const { sociogram, students, responses, submittedIds } = data;
   const N = students.length;
@@ -433,9 +554,10 @@ function analyse(data) {
 
   responses.forEach(r => {
     if (r.choice_type==='positive') { posIn[r.to_student]++; posOut[r.from_student]++; }
-    else { negIn[r.to_student]++; negOut[r.from_student]++; }
+    else                            { negIn[r.to_student]++; negOut[r.from_student]++; }
   });
 
+  // Reciprocal pairs
   const posEdgeSet = new Set(responses.filter(r=>r.choice_type==='positive').map(r=>`${r.from_student}-${r.to_student}`));
   const reciprocalPairs = [];
   const reciprocalSet = new Set();
@@ -452,17 +574,44 @@ function analyse(data) {
   const submittedSet = new Set(submittedIds);
   const totalSubmitted = submittedIds.length;
 
+  // Derived sociometric metrics
+  const sp={}, siImpact={}, siScore={};
+  students.forEach(s => {
+    const pos = posIn[s.id]||0, neg = negIn[s.id]||0;
+    sp[s.id]       = pos - neg;                           // Social Preference
+    siImpact[s.id] = pos + neg;                           // Social Impact
+    siScore[s.id]  = N > 1 ? (pos - neg) / (N - 1) : 0;  // Sociometric Index (−1…+1)
+  });
+
+  // Z-scores for Coie-Dodge classification
+  const posVals = students.map(s => posIn[s.id]||0);
+  const negVals = students.map(s => negIn[s.id]||0);
+  const mPos = arrMean(posVals), sdPos = arrStd(posVals, mPos);
+  const mNeg = arrMean(negVals), sdNeg = arrStd(negVals, mNeg);
+
+  const zPos={}, zNeg={};
+  students.forEach(s => {
+    zPos[s.id] = ((posIn[s.id]||0) - mPos) / sdPos;
+    zNeg[s.id] = ((negIn[s.id]||0) - mNeg) / sdNeg;
+  });
+
   const statusMap = {};
   students.forEach(s => {
-    const pos = posIn[s.id], neg = negIn[s.id], net = pos - neg;
-    let status = 'Gemiddeld';
-    if (totalSubmitted > 0) {
-      if (pos===0 && neg===0) status = 'Geïsoleerd';
-      else if (net >= Math.max(2, Math.floor(N*.25))) status = 'Ster';
-      else if (neg >= Math.max(2, Math.floor(N*.25))) status = 'Afgewezen';
-      else if (pos<=1 && neg===0) status = 'Verwaarloosd';
-    }
-    statusMap[s.id] = status;
+    const pos = posIn[s.id]||0, neg = negIn[s.id]||0;
+
+    if (totalSubmitted === 0) { statusMap[s.id] = 'Gemiddeld'; return; }
+    if (pos === 0 && neg === 0) { statusMap[s.id] = 'Geïsoleerd'; return; }
+
+    const zp = zPos[s.id], zn = zNeg[s.id];
+    const zsp = zp - zn;   // standardised social preference
+    const zsi = zp + zn;   // standardised social impact
+
+    if (zsp >= 1.0 && zp > 0 && zn <= 0) { statusMap[s.id] = 'Ster'; return; }
+    if (zsp >= 0.5 && zp > 0 && zn <  0) { statusMap[s.id] = 'Populair'; return; }
+    if (zsp <= -1.0 && zn > 0 && zp < 0) { statusMap[s.id] = 'Afgewezen'; return; }
+    if (zsi <= -1.0)                      { statusMap[s.id] = 'Verwaarloosd'; return; }
+    if (zp > 0 && zn > 0 && zsi >= 0.5)  { statusMap[s.id] = 'Controversieel'; return; }
+    statusMap[s.id] = 'Gemiddeld';
   });
 
   const recipCount = {};
@@ -475,7 +624,8 @@ function analyse(data) {
 
   return { N, students, sMap, posIn, negIn, posOut, negOut,
     submittedSet, totalSubmitted, statusMap,
-    reciprocalPairs, recipCount, reciprocityIndex, totalPosPairs, clusters };
+    reciprocalPairs, recipCount, reciprocityIndex, totalPosPairs, clusters,
+    sp, siImpact, siScore, zPos, zNeg };
 }
 
 function detectClusters(students, responses) {
@@ -510,9 +660,31 @@ function detectClusters(students, responses) {
 }
 
 /* =========================================================
+   STATUS HELPERS
+   ========================================================= */
+const STATUS_COLORS = {
+  Ster: '#f59e0b', Populair: '#10b981', Gemiddeld: '#6366f1',
+  Controversieel: '#f97316', Verwaarloosd: '#94a3b8',
+  Afgewezen: '#f43f5e', Geïsoleerd: '#ef4444'
+};
+const STATUS_ICONS = {
+  Ster: '⭐', Populair: '✅', Gemiddeld: '🔵',
+  Controversieel: '🔥', Verwaarloosd: '👻', Afgewezen: '🔴', Geïsoleerd: '🚨'
+};
+const STATUS_BADGE = {
+  Ster: 'badge-star', Populair: 'badge-success', Gemiddeld: 'badge-primary',
+  Controversieel: 'badge-warning', Verwaarloosd: 'badge-neutral',
+  Afgewezen: 'badge-danger', Geïsoleerd: 'badge-danger'
+};
+
+function statusColor(s)  { return STATUS_COLORS[s]  || '#6366f1'; }
+function statusIcon(s)   { return STATUS_ICONS[s]   || '🔵'; }
+function statusBadge(s)  { return STATUS_BADGE[s]   || 'badge-neutral'; }
+
+/* =========================================================
    RENDER
    ========================================================= */
-let cachedAnalysis = null; // cache so cluster results stay stable across tabs
+let cachedAnalysis = null;
 
 function render(data) {
   const { sociogram, students } = data;
@@ -534,15 +706,17 @@ function render(data) {
   renderHeatmap(data);
   renderClusters(a);
   renderMetrics(a, sociogram);
+  renderPerStudent(data, a);
   renderStatus(data, a);
 }
 
 /* ---- Stats ---- */
 function renderStats(a) {
-  const pct = a.N ? Math.round(a.totalSubmitted/a.N*100) : 0;
-  const stars    = a.students.filter(s=>a.statusMap[s.id]==='Ster').length;
-  const isolated = a.students.filter(s=>a.statusMap[s.id]==='Geïsoleerd').length;
-  const pairs    = a.reciprocalPairs.length;
+  const pct     = a.N ? Math.round(a.totalSubmitted/a.N*100) : 0;
+  const stars   = a.students.filter(s=>a.statusMap[s.id]==='Ster').length;
+  const controv = a.students.filter(s=>a.statusMap[s.id]==='Controversieel').length;
+  const isolated= a.students.filter(s=>['Geïsoleerd','Afgewezen'].includes(a.statusMap[s.id])).length;
+  const pairs   = a.reciprocalPairs.length;
 
   const card = (icon, value, label, accent) => `
     <div class="stat-card" style="--card-accent:${accent};">
@@ -553,12 +727,12 @@ function renderStats(a) {
 
   $('stats-grid').innerHTML =
     card('📋', `${a.totalSubmitted}/${a.N}`, `Ingevuld (${pct}%)`,
-      pct===100 ? 'linear-gradient(90deg,#10b981,#059669)' : 'linear-gradient(90deg,var(--primary),var(--violet))') +
+      pct===100?'linear-gradient(90deg,#10b981,#059669)':'linear-gradient(90deg,var(--primary),var(--violet))') +
     card('⭐', stars, 'Sterren', 'linear-gradient(90deg,#f59e0b,#d97706)') +
     card('🔁', pairs, 'Wederkerige banden', 'linear-gradient(90deg,#06b6d4,#0284c7)') +
-    card('🚨', isolated, 'Geïsoleerd', 'linear-gradient(90deg,#f43f5e,#e11d48)') +
-    card('📊', `${(a.reciprocityIndex*100).toFixed(0)}%`, 'Wederkerigheidsindex', 'linear-gradient(90deg,#8b5cf6,#7c3aed)') +
-    card('👥', a.clusters.length, 'Sociale groepen', 'linear-gradient(90deg,#10b981,#059669)');
+    card('🚨', isolated, 'Aandacht nodig', 'linear-gradient(90deg,#f43f5e,#e11d48)') +
+    card('🔥', controv, 'Controversieel', 'linear-gradient(90deg,#f97316,#ea580c)') +
+    card('📊', `${(a.reciprocityIndex*100).toFixed(0)}%`, 'Wederkerigheidsindex', 'linear-gradient(90deg,#8b5cf6,#7c3aed)');
 }
 
 /* ---- D3 Graph ---- */
@@ -568,7 +742,7 @@ function renderGraph(data, a) {
 
   const container = $('graph-container');
   const W = container.clientWidth || 800;
-  const H = 480; // leave room for legend bar at bottom
+  const H = 480;
 
   d3.select('#graph-svg').selectAll('*').remove();
 
@@ -580,10 +754,7 @@ function renderGraph(data, a) {
   svg.call(zoomBehavior);
   svgRef = svg;
 
-  // Defs
   const defs = svg.append('defs');
-  const gradColors = { ster:'#f59e0b', populair:'#10b981', gemiddeld:'#6366f1', verwaarloosd:'#f97316', afgewezen:'#f43f5e', geïsoleerd:'#f43f5e' };
-
   [['pos','#10b981'],['neg','#f43f5e']].forEach(([id, color]) => {
     defs.append('marker').attr('id','arrow-'+id)
       .attr('viewBox','0 -5 10 10').attr('refX',22).attr('refY',0)
@@ -591,17 +762,13 @@ function renderGraph(data, a) {
       .append('path').attr('d','M0,-5L10,0L0,5').attr('fill',color).attr('opacity',.8);
   });
 
-  // Glow filter
   const f = defs.append('filter').attr('id','glow').attr('x','-30%').attr('y','-30%').attr('width','160%').attr('height','160%');
   f.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
   const feMerge = f.append('feMerge');
   feMerge.append('feMergeNode').attr('in','blur');
   feMerge.append('feMergeNode').attr('in','SourceGraphic');
 
-  function nodeColor(id) {
-    const s = statusMap[id];
-    return { Ster:'#f59e0b', Populair:'#10b981', Gemiddeld:'#6366f1', Verwaarloosd:'#f97316', Afgewezen:'#f43f5e', Geïsoleerd:'#f43f5e' }[s] || '#6366f1';
-  }
+  function nodeColor(id) { return statusColor(statusMap[id]); }
   function nodeR(id) { return Math.max(14, Math.min(32, 14 + (posIn[id]||0)*3)); }
 
   const links = responses
@@ -616,19 +783,17 @@ function renderGraph(data, a) {
     .force('center', d3.forceCenter(W/2, H/2))
     .force('collision', d3.forceCollide().radius(d=>nodeR(d.id)+10));
 
-  // Links
   const link = g.append('g').selectAll('line').data(links).enter().append('line')
     .attr('stroke', d => d.type==='positive' ? '#10b981' : '#f43f5e')
-    .attr('stroke-width', d => d.type==='positive' ? 1.5 : 1.5)
+    .attr('stroke-width', 1.5)
     .attr('stroke-opacity', .55)
     .attr('stroke-dasharray', d => d.type==='negative' ? '5 3' : null)
     .attr('marker-end', d => `url(#arrow-${d.type==='positive'?'pos':'neg'})`);
 
-  // Nodes
   const tooltip = $('graph-tooltip');
   const node = g.append('g').selectAll('g').data(nodes).enter().append('g')
     .attr('class','node')
-    .style('cursor','grab')
+    .style('cursor','pointer')
     .call(d3.drag()
       .on('start', (e,d) => { if(!e.active) simulation.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; })
       .on('drag', (e,d) => { d.fx=e.x; d.fy=e.y; })
@@ -640,23 +805,24 @@ function renderGraph(data, a) {
     .attr('stroke', 'rgba(255,255,255,.25)')
     .attr('stroke-width', 2)
     .attr('filter', 'url(#glow)')
+    .on('click', (e,d) => { e.stopPropagation(); openStudentModal(d.id); })
     .on('mouseover', (e,d) => {
       const pos = posIn[d.id]||0, neg = negIn[d.id]||0;
-      const statusLabels = { Ster:'⭐ Ster', Populair:'✅ Populair', Gemiddeld:'🔵 Gemiddeld',
-        Verwaarloosd:'👻 Verwaarloosd', Afgewezen:'🔴 Afgewezen', Geïsoleerd:'🚨 Geïsoleerd' };
+      const st = statusMap[d.id];
       tooltip.innerHTML = `
         <div style="font-weight:700;font-size:.95rem;margin-bottom:.4rem;">${escHtml(d.name)}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.15rem .75rem;font-size:.82rem;color:rgba(255,255,255,.8);">
           <span>+ Ontvangen</span><strong style="color:#10b981;">+${pos}</strong>
           <span>− Ontvangen</span><strong style="color:#f43f5e;">-${neg}</strong>
-          <span>Nettoscore</span><strong style="color:${pos-neg>=0?'#10b981':'#f43f5e'}">${pos-neg>=0?'+':''}${pos-neg}</strong>
-          <span>Status</span><strong>${statusLabels[statusMap[d.id]]||statusMap[d.id]}</strong>
-        </div>`;
+          <span>SP</span><strong style="color:${pos-neg>=0?'#10b981':'#f43f5e'}">${pos-neg>=0?'+':''}${pos-neg}</strong>
+          <span>Status</span><strong>${statusIcon(st)} ${st}</strong>
+        </div>
+        <div style="margin-top:.5rem;font-size:.75rem;color:rgba(255,255,255,.5);">Klik voor volledig profiel</div>`;
       tooltip.style.display = 'block';
     })
     .on('mousemove', e => {
       let x = e.clientX + 14, y = e.clientY - 14;
-      if (x + 240 > window.innerWidth) x = e.clientX - 248;
+      if (x + 260 > window.innerWidth) x = e.clientX - 268;
       tooltip.style.left = x + 'px';
       tooltip.style.top  = y + 'px';
     })
@@ -676,18 +842,16 @@ function renderGraph(data, a) {
   });
 }
 
-/* Zoom controls */
-$('zoom-in').onclick  = () => svgRef?.transition().call(zoomBehavior.scaleBy, 1.4);
-$('zoom-out').onclick = () => svgRef?.transition().call(zoomBehavior.scaleBy, .7);
+$('zoom-in').onclick    = () => svgRef?.transition().call(zoomBehavior.scaleBy, 1.4);
+$('zoom-out').onclick   = () => svgRef?.transition().call(zoomBehavior.scaleBy, .7);
 $('zoom-reset').onclick = () => svgRef?.transition().call(zoomBehavior.transform, d3.zoomIdentity);
 
-/* Filter buttons */
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', function() {
     currentFilter = this.dataset.filter;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     this.classList.add('active');
-    if (lastData) renderGraph(lastData, analyse(lastData));
+    if (lastData && cachedAnalysis) renderGraph(lastData, cachedAnalysis);
   });
 });
 
@@ -698,14 +862,14 @@ function renderRanking(a) {
   const byPos = [...students].sort((x,y)=>(posIn[y.id]||0)-(posIn[x.id]||0));
   const byNeg = [...students].sort((x,y)=>(negIn[y.id]||0)-(negIn[x.id]||0));
 
-  function rankItems(list, scoreFn, colorVar) {
+  function rankItems(list, scoreFn, color) {
     return list.slice(0,10).map((s,i) => {
       const score = scoreFn(s.id);
       if (score===0 && i>0) return '';
-      return `<li class="ranking-item ${i<3?'rank-'+(i+1):''}">
+      return `<li class="ranking-item ${i<3?'rank-'+(i+1):''}" style="cursor:pointer;" onclick="openStudentModal(${s.id})">
         <div class="rank-number">${i+1}</div>
         <span class="rank-name">${escHtml(s.name)}</span>
-        <span class="badge" style="background:${colorVar}20;color:${colorVar};font-weight:700;">${score}</span>
+        <span class="badge" style="background:${color}20;color:${color};font-weight:700;">${score}</span>
       </li>`;
     }).join('');
   }
@@ -715,25 +879,34 @@ function renderRanking(a) {
 
   const stars = students.filter(s=>statusMap[s.id]==='Ster');
   $('stars-list').innerHTML = stars.length
-    ? stars.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+    ? stars.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer;" onclick="openStudentModal(${s.id})">
         <span class="badge badge-star">⭐ Ster</span>
         <strong>${escHtml(s.name)}</strong>
         <span class="text-muted">${posIn[s.id]} keuzes</span>
       </div>`).join('')
     : '<p class="text-muted">Geen sterren.</p>';
 
+  const controvs = students.filter(s=>statusMap[s.id]==='Controversieel');
+  $('controversial-list').innerHTML = controvs.length
+    ? controvs.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer;" onclick="openStudentModal(${s.id})">
+        <span class="badge" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;">🔥 Controversieel</span>
+        <strong>${escHtml(s.name)}</strong>
+        <span class="text-muted">+${posIn[s.id]} / −${negIn[s.id]}</span>
+      </div>`).join('')
+    : '<p class="text-muted">Geen controversiële leerlingen.</p>';
+
   $('reciprocal-list').innerHTML = reciprocalPairs.length
     ? reciprocalPairs.map(p=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
         <span style="background:#dbeafe;color:#1d4ed8;padding:.15rem .55rem;border-radius:99px;font-size:.78rem;font-weight:700;">↔</span>
-        <strong>${escHtml(sMap[p.a].name)}</strong>
+        <strong style="cursor:pointer;" onclick="openStudentModal(${p.a})">${escHtml(sMap[p.a].name)}</strong>
         <span style="color:var(--text-muted);font-size:.9rem;">&amp;</span>
-        <strong>${escHtml(sMap[p.b].name)}</strong>
+        <strong style="cursor:pointer;" onclick="openStudentModal(${p.b})">${escHtml(sMap[p.b].name)}</strong>
       </div>`).join('')
     : '<p class="text-muted">Geen wederkerige keuzes.</p>';
 
   const neglected = students.filter(s=>statusMap[s.id]==='Verwaarloosd');
   $('neglected-list').innerHTML = neglected.length
-    ? neglected.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
+    ? neglected.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;cursor:pointer;" onclick="openStudentModal(${s.id})">
         <span class="badge badge-neutral">👻</span>
         <strong>${escHtml(s.name)}</strong>
       </div>`).join('')
@@ -741,7 +914,7 @@ function renderRanking(a) {
 
   const isolated = students.filter(s=>statusMap[s.id]==='Geïsoleerd');
   $('isolated-list').innerHTML = isolated.length
-    ? isolated.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
+    ? isolated.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;cursor:pointer;" onclick="openStudentModal(${s.id})">
         <span class="badge badge-danger">🚨</span>
         <strong>${escHtml(s.name)}</strong>
       </div>`).join('')
@@ -795,7 +968,8 @@ function renderClusters(a) {
         <span class="badge" style="background:${c}18;color:${c};">${members.length} leerlingen</span>
       </div>
       <div class="cluster-members">
-        ${members.map(s=>`<span class="member-chip" style="background:${c}18;color:${c};">${escHtml(s.name)}</span>`).join('')}
+        ${members.map(s=>`<span class="member-chip" style="background:${c}18;color:${c};cursor:pointer;"
+          onclick="openStudentModal(${s.id})">${escHtml(s.name)}</span>`).join('')}
       </div>
     </div>`;
   }).join('');
@@ -803,22 +977,26 @@ function renderClusters(a) {
 
 /* ---- Metrics ---- */
 function renderMetrics(a, sg) {
-  const { students, posIn, negIn, posOut, statusMap, recipCount, totalSubmitted, N, totalPosPairs, reciprocityIndex } = a;
+  const { students, posIn, negIn, posOut, statusMap, recipCount, totalSubmitted, N,
+          totalPosPairs, reciprocityIndex, sp, siImpact, siScore } = a;
   const sorted = [...students].sort((x,y)=>(posIn[y.id]||0)-(posIn[x.id]||0));
-  const badgeClass = { Ster:'badge-star', Geïsoleerd:'badge-danger', Afgewezen:'badge-danger', Verwaarloosd:'badge-neutral', Gemiddeld:'badge-primary' };
 
   $('metrics-tbody').innerHTML = sorted.map(s => {
-    const pos=posIn[s.id]||0, neg=negIn[s.id]||0, out=posOut[s.id]||0, net=pos-neg;
+    const pos=posIn[s.id]||0, neg=negIn[s.id]||0, out=posOut[s.id]||0;
+    const spVal = sp[s.id]||0, impact = siImpact[s.id]||0, si = siScore[s.id]||0;
     const recip = out>0 ? (recipCount[s.id]/out).toFixed(2) : '—';
     const st = statusMap[s.id];
-    return `<tr>
+    const siColor = si>0?'var(--success)':si<0?'var(--danger)':'inherit';
+    return `<tr style="cursor:pointer;" onclick="openStudentModal(${s.id})">
       <td><strong>${escHtml(s.name)}</strong></td>
       <td><span class="badge badge-success">+${pos}</span></td>
       <td><span class="badge badge-danger">-${neg}</span></td>
       <td>${out}</td>
-      <td><strong style="color:${net>0?'var(--success)':net<0?'var(--danger)':'inherit'}">${net>0?'+':''}${net}</strong></td>
+      <td><strong style="color:${spVal>0?'var(--success)':spVal<0?'var(--danger)':'inherit'}">${spVal>0?'+':''}${spVal}</strong></td>
+      <td><strong>${impact}</strong></td>
+      <td><strong style="color:${siColor}">${si>=0?'+':''}${si.toFixed(2)}</strong></td>
       <td>${recip}</td>
-      <td><span class="badge ${badgeClass[st]||'badge-neutral'}">${st}</span></td>
+      <td><span class="badge ${statusBadge(st)}">${statusIcon(st)} ${st}</span></td>
     </tr>`;
   }).join('');
 
@@ -835,6 +1013,230 @@ function renderMetrics(a, sg) {
     </div>`;
 }
 
+/* ---- Per Leerling ---- */
+function renderPerStudent(data, a) {
+  const { students } = data;
+  const { statusMap } = a;
+
+  $('student-selector').innerHTML = students.map(s => {
+    const c = statusColor(statusMap[s.id]);
+    const active = selectedStudentId===s.id ? ' active' : '';
+    return `<button class="student-sel-btn${active}" onclick="selectStudent(${s.id})">
+      <span class="student-sel-dot" style="background:${c};"></span>
+      ${escHtml(s.name)}
+    </button>`;
+  }).join('');
+
+  if (selectedStudentId && a.sMap[selectedStudentId]) {
+    showStudentProfile(selectedStudentId, data, a);
+  } else {
+    $('student-profile-area').innerHTML = '<p class="text-muted" style="padding:1rem 0;">Kies een leerling hierboven.</p>';
+  }
+}
+
+function selectStudent(id) {
+  selectedStudentId = id;
+  if (lastData && cachedAnalysis) {
+    renderPerStudent(lastData, cachedAnalysis);
+  }
+}
+
+function showStudentProfile(id, data, a) {
+  const { responses } = data;
+  const { sMap, statusMap, posIn, negIn, posOut, negOut, sp, siImpact, siScore, recipCount } = a;
+  const s = sMap[id];
+  if (!s) return;
+  const st = statusMap[id];
+  const c  = statusColor(st);
+
+  const chosenPos   = responses.filter(r=>r.from_student===id && r.choice_type==='positive');
+  const chosenNeg   = responses.filter(r=>r.from_student===id && r.choice_type==='negative');
+  const receivedPos = responses.filter(r=>r.to_student  ===id && r.choice_type==='positive');
+  const receivedNeg = responses.filter(r=>r.to_student  ===id && r.choice_type==='negative');
+
+  const initials = s.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const spVal = sp[id]||0, impact = siImpact[id]||0, si = siScore[id]||0;
+
+  const maxPosIn = Math.max(1, ...Object.values(posIn));
+
+  $('student-profile-area').innerHTML = `
+    <div class="student-profile-card">
+      <div class="student-profile-header">
+        <div class="student-avatar" style="background:${c};">${escHtml(initials)}</div>
+        <div>
+          <div style="font-size:1.2rem;font-weight:800;">${escHtml(s.name)}</div>
+          <span class="badge ${statusBadge(st)}" style="margin-top:.25rem;">${statusIcon(st)} ${st}</span>
+        </div>
+      </div>
+
+      <div class="student-metrics-mini">
+        <div class="mini-metric">
+          <div class="val" style="color:#10b981;">+${posIn[id]||0}</div>
+          <div class="lbl">Positief ontvangen</div>
+        </div>
+        <div class="mini-metric">
+          <div class="val" style="color:#f43f5e;">-${negIn[id]||0}</div>
+          <div class="lbl">Negatief ontvangen</div>
+        </div>
+        <div class="mini-metric">
+          <div class="val" style="color:${spVal>=0?'#10b981':'#f43f5e'};">${spVal>=0?'+':''}${spVal}</div>
+          <div class="lbl">Sociale Voorkeur (SP)</div>
+        </div>
+        <div class="mini-metric">
+          <div class="val" style="color:${si>=0?'#6366f1':'#f43f5e'};">${si>=0?'+':''}${si.toFixed(2)}</div>
+          <div class="lbl">Sociometrisch Index</div>
+        </div>
+      </div>
+
+      <!-- Popularity bar -->
+      <div style="margin-bottom:1.25rem;">
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-muted);margin-bottom:.3rem;">
+          <span>Populariteit in klas</span>
+          <span>${posIn[id]||0} / ${a.N-1} mogelijk</span>
+        </div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill" style="width:${a.N>1?Math.round((posIn[id]||0)/(a.N-1)*100):0}%;background:${c};"></div>
+        </div>
+      </div>
+
+      <div class="choice-columns">
+        <div class="choice-col">
+          <h4 style="color:#10b981;">💚 Positief gekozen door (${receivedPos.length})</h4>
+          ${receivedPos.length
+            ? receivedPos.map(r=>`<span class="choice-pill" style="background:#d1fae5;color:#065f46;cursor:pointer;"
+                onclick="selectStudent(${r.from_student})">
+                ${escHtml(sMap[r.from_student]?.name||'?')}
+              </span>`).join('')
+            : '<span style="color:var(--text-muted);font-size:.85rem;">Niemand</span>'}
+        </div>
+        <div class="choice-col">
+          <h4 style="color:#f43f5e;">🔴 Negatief gekozen door (${receivedNeg.length})</h4>
+          ${receivedNeg.length
+            ? receivedNeg.map(r=>`<span class="choice-pill" style="background:#ffe4e6;color:#be123c;cursor:pointer;"
+                onclick="selectStudent(${r.from_student})">
+                ${escHtml(sMap[r.from_student]?.name||'?')}
+              </span>`).join('')
+            : '<span style="color:var(--text-muted);font-size:.85rem;">Niemand</span>'}
+        </div>
+        <div class="choice-col">
+          <h4 style="color:#6366f1;">↗ Zelf positief gekozen (${chosenPos.length})</h4>
+          ${chosenPos.length
+            ? chosenPos.map(r=>`<span class="choice-pill" style="background:#eef2ff;color:#4338ca;cursor:pointer;"
+                onclick="selectStudent(${r.to_student})">
+                ${escHtml(sMap[r.to_student]?.name||'?')}
+              </span>`).join('')
+            : '<span style="color:var(--text-muted);font-size:.85rem;">Geen keuzes gemaakt</span>'}
+        </div>
+        <div class="choice-col">
+          <h4 style="color:#94a3b8;">↗ Zelf negatief gekozen (${chosenNeg.length})</h4>
+          ${chosenNeg.length
+            ? chosenNeg.map(r=>`<span class="choice-pill" style="background:#f8fafc;color:#475569;cursor:pointer;"
+                onclick="selectStudent(${r.to_student})">
+                ${escHtml(sMap[r.to_student]?.name||'?')}
+              </span>`).join('')
+            : '<span style="color:var(--text-muted);font-size:.85rem;">Geen negatieve keuzes</span>'}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---- Student Modal ---- */
+function openStudentModal(id) {
+  if (!lastData || !cachedAnalysis) return;
+  const { responses } = lastData;
+  const a = cachedAnalysis;
+  const { sMap, statusMap, posIn, negIn, sp, siScore } = a;
+  const s = sMap[id];
+  if (!s) return;
+
+  const st = statusMap[id];
+  const c  = statusColor(st);
+  const initials = s.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+
+  $('modal-avatar').style.background = c;
+  $('modal-avatar').textContent = initials;
+  $('modal-name').textContent = s.name;
+  $('modal-status-badge').innerHTML = `<span class="badge ${statusBadge(st)}" style="margin-top:.2rem;">${statusIcon(st)} ${st}</span>`;
+
+  const chosenPos   = responses.filter(r=>r.from_student===id && r.choice_type==='positive');
+  const chosenNeg   = responses.filter(r=>r.from_student===id && r.choice_type==='negative');
+  const receivedPos = responses.filter(r=>r.to_student  ===id && r.choice_type==='positive');
+  const receivedNeg = responses.filter(r=>r.to_student  ===id && r.choice_type==='negative');
+
+  const spVal = sp[id]||0, si = siScore[id]||0;
+
+  $('modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1.25rem;">
+      <div class="mini-metric">
+        <div class="val" style="color:#10b981;">+${posIn[id]||0}</div>
+        <div class="lbl">+ Ontvangen</div>
+      </div>
+      <div class="mini-metric">
+        <div class="val" style="color:#f43f5e;">-${negIn[id]||0}</div>
+        <div class="lbl">− Ontvangen</div>
+      </div>
+      <div class="mini-metric">
+        <div class="val" style="color:${spVal>=0?'#10b981':'#f43f5e'};">${spVal>=0?'+':''}${spVal}</div>
+        <div class="lbl">SP</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <strong style="font-size:.85rem;color:var(--text-muted);">💚 POSITIEF GEKOZEN DOOR</strong>
+      <div style="margin-top:.5rem;">
+        ${receivedPos.length
+          ? receivedPos.map(r=>`<span class="choice-pill" style="background:#d1fae5;color:#065f46;">${escHtml(sMap[r.from_student]?.name||'?')}</span>`).join('')
+          : '<span style="color:var(--text-muted);font-size:.85rem;">Niemand</span>'}
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <strong style="font-size:.85rem;color:var(--text-muted);">🔴 NEGATIEF GEKOZEN DOOR</strong>
+      <div style="margin-top:.5rem;">
+        ${receivedNeg.length
+          ? receivedNeg.map(r=>`<span class="choice-pill" style="background:#ffe4e6;color:#be123c;">${escHtml(sMap[r.from_student]?.name||'?')}</span>`).join('')
+          : '<span style="color:var(--text-muted);font-size:.85rem;">Niemand</span>'}
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <strong style="font-size:.85rem;color:var(--text-muted);">↗ ZELF POSITIEF GEKOZEN</strong>
+      <div style="margin-top:.5rem;">
+        ${chosenPos.length
+          ? chosenPos.map(r=>`<span class="choice-pill" style="background:#eef2ff;color:#4338ca;">${escHtml(sMap[r.to_student]?.name||'?')}</span>`).join('')
+          : '<span style="color:var(--text-muted);font-size:.85rem;">Geen keuzes gemaakt</span>'}
+      </div>
+    </div>
+
+    ${chosenNeg.length ? `
+    <div>
+      <strong style="font-size:.85rem;color:var(--text-muted);">↗ ZELF NEGATIEF GEKOZEN</strong>
+      <div style="margin-top:.5rem;">
+        ${chosenNeg.map(r=>`<span class="choice-pill" style="background:#f8fafc;color:#475569;">${escHtml(sMap[r.to_student]?.name||'?')}</span>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);">
+      <button class="btn btn-primary btn-sm" onclick="switchToPerStudent(${id})">Volledig profiel bekijken →</button>
+    </div>`;
+
+  $('student-modal').classList.add('open');
+}
+
+function switchToPerStudent(id) {
+  closeModal();
+  selectedStudentId = id;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const btn = document.querySelector('[data-tab="perstudent"]');
+  if (btn) { btn.classList.add('active'); $('tab-perstudent').classList.add('active'); }
+  if (lastData && cachedAnalysis) renderPerStudent(lastData, cachedAnalysis);
+}
+
+function closeModal() { $('student-modal').classList.remove('open'); }
+$('modal-close-btn').onclick = closeModal;
+$('student-modal').addEventListener('click', e => { if (e.target===$('student-modal')) closeModal(); });
+
 /* ---- Status ---- */
 function renderStatus(data, a) {
   const { students, submissions } = data;
@@ -842,7 +1244,7 @@ function renderStatus(data, a) {
   const subMap={};
   (submissions||[]).forEach(s => { subMap[s.student_id]=s.submitted_at; });
 
-  const done = students.filter(s=>submittedSet.has(s.id));
+  const done    = students.filter(s=> submittedSet.has(s.id));
   const pending = students.filter(s=>!submittedSet.has(s.id));
 
   $('status-list').innerHTML = `
@@ -908,7 +1310,6 @@ function connectSSE() {
   es.onmessage = () => refreshData(true);
   es.onerror = () => {
     es.close();
-    // Exponential back-off, capped at 30s
     setTimeout(() => { sseRetry = Math.min(sseRetry * 2, 30000); connectSSE(); }, sseRetry);
   };
   es.onopen = () => { sseRetry = 1000; };
@@ -918,7 +1319,6 @@ window.addEventListener('resize', () => {
   if (lastData && cachedAnalysis && $('tab-graph').classList.contains('active')) renderGraph(lastData, cachedAnalysis);
 });
 
-/* ---- Init ---- */
 loadResults().then(() => connectSSE());
 </script>
 </body>
