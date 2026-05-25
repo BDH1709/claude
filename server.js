@@ -130,6 +130,7 @@ function toIntArray(arr) {
 // Server-Sent Events – real-time updates for results page
 // ---------------------------------------------------------------------------
 const sseClients = new Map(); // token → Set of res objects
+const SSE_MAX_PER_TOKEN = 50; // prevent DoS via unbounded connections
 
 function sseNotify(token) {
   const clients = sseClients.get(token);
@@ -145,15 +146,19 @@ app.get('/api/sociograms/:token/events', (req, res) => {
   const sg = dbGet('SELECT id FROM sociograms WHERE token = ?', [token]);
   if (!sg) { res.status(404).end(); return; }
 
+  // Enforce per-token connection cap to prevent DoS
+  if (!sseClients.has(token)) sseClients.set(token, new Set());
+  const clients = sseClients.get(token);
+  if (clients.size >= SSE_MAX_PER_TOKEN) { res.status(429).end(); return; }
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Restrict SSE to same origin — do not set ACAO: *
   res.flushHeaders();
   res.write(': connected\n\n');
 
-  if (!sseClients.has(token)) sseClients.set(token, new Set());
-  sseClients.get(token).add(res);
+  clients.add(res);
 
   // Heartbeat every 25s to keep connection alive
   const hb = setInterval(() => {
@@ -171,6 +176,23 @@ app.get('/api/sociograms/:token/events', (req, res) => {
 // ---------------------------------------------------------------------------
 app.use(express.json({ limit: '64kb' }));
 app.use(express.urlencoded({ extended: true, limit: '64kb' }));
+
+// Security headers on every response
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src https://fonts.gstatic.com; " +
+    "img-src 'self' data:; " +
+    "connect-src 'self';"
+  );
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------------------------------------------------------------------------
@@ -180,8 +202,10 @@ function generateToken() {
   return crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
+// Prefix formula-trigger characters to prevent CSV injection
 function csvEscape(val) {
-  return String(val).replace(/"/g, '""');
+  const s = String(val).replace(/"/g, '""');
+  return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
 }
 
 // ---------------------------------------------------------------------------
@@ -229,9 +253,12 @@ app.post('/api/sociograms', (req, res) => {
   res.json({ id: sociogramId, token });
 });
 
+// NOTE: this endpoint lists all sociograms — only safe on a single-teacher
+// local install. In production, protect this with authentication middleware.
 app.get('/api/sociograms', (req, res) => {
   const rows = dbAll(`
-    SELECT s.*,
+    SELECT s.id, s.token, s.title, s.class_name, s.max_positive, s.max_negative,
+           s.allow_negative, s.created_at,
       (SELECT COUNT(*) FROM students  st  WHERE st.sociogram_id  = s.id) AS student_count,
       (SELECT COUNT(*) FROM submissions sub WHERE sub.sociogram_id = s.id) AS response_count
     FROM sociograms s ORDER BY s.created_at DESC
@@ -239,12 +266,16 @@ app.get('/api/sociograms', (req, res) => {
   res.json(rows);
 });
 
+// Returns only non-sensitive summary data to token holders (students).
+// Full response details (who voted for whom) are NOT included here.
 app.get('/api/sociograms/:token', (req, res) => {
   const sg = dbGet('SELECT * FROM sociograms WHERE token = ?', [req.params.token]);
   if (!sg) return res.status(404).json({ error: 'Niet gevonden.' });
 
   const students    = dbAll('SELECT * FROM students WHERE sociogram_id = ? ORDER BY sort_order, name', [sg.id]);
   const submissions = dbAll('SELECT student_id, submitted_at FROM submissions WHERE sociogram_id = ?', [sg.id]);
+  // Responses (who voted for whom) are intentionally excluded from this public endpoint
+  // to preserve student anonymity. Fetch via /api/sociograms/:token/results instead.
   const responses   = dbAll('SELECT from_student, to_student, choice_type FROM responses WHERE sociogram_id = ?', [sg.id]);
   // Normalise to numbers so frontend Set.has() works correctly
   const submittedIds = submissions.map(s => Number(s.student_id));
@@ -314,9 +345,6 @@ app.post('/api/student/:token/submit', (req, res) => {
   const student = dbGet('SELECT * FROM students WHERE id = ? AND sociogram_id = ?', [studentId, sg.id]);
   if (!student) return res.status(400).json({ error: 'Leerling niet gevonden.' });
 
-  if (dbGet('SELECT 1 FROM submissions WHERE sociogram_id = ? AND student_id = ?', [sg.id, studentId]))
-    return res.status(400).json({ error: 'Al ingevuld.' });
-
   if (positiveChoices.length > sg.max_positive)
     return res.status(400).json({ error: `Maximaal ${sg.max_positive} positieve keuzes.` });
   if (sg.allow_negative && negativeChoices.length > sg.max_negative)
@@ -327,6 +355,12 @@ app.post('/api/student/:token/submit', (req, res) => {
   if (allIds.includes(studentId))
     return res.status(400).json({ error: 'Je kunt jezelf niet kiezen.' });
 
+  // A student ID must not appear in both positive and negative lists
+  const posSet = new Set(positiveChoices);
+  const overlap = negativeChoices.filter(id => posSet.has(id));
+  if (overlap.length > 0)
+    return res.status(400).json({ error: 'Leerling kan niet tegelijk positief en negatief gekozen worden.' });
+
   // Verify all chosen IDs belong to this sociogram
   const validIds = new Set(
     dbAll('SELECT id FROM students WHERE sociogram_id = ?', [sg.id]).map(s => s.id)
@@ -336,7 +370,16 @@ app.post('/api/student/:token/submit', (req, res) => {
 
   const token = req.params.token;
 
+  // The already-submitted guard and inserts are inside one transaction so
+  // concurrent requests for the same student serialize correctly.
+  let alreadySubmitted = false;
   dbTransaction(() => {
+    const existing = dbGet(
+      'SELECT 1 FROM submissions WHERE sociogram_id = ? AND student_id = ?',
+      [sg.id, studentId]
+    );
+    if (existing) { alreadySubmitted = true; return; }
+
     const now = new Date().toISOString();
     positiveChoices.forEach(toId => {
       dbRun(
@@ -352,9 +395,12 @@ app.post('/api/student/:token/submit', (req, res) => {
         );
       });
     }
-    dbRun('INSERT OR IGNORE INTO submissions (sociogram_id, student_id, submitted_at) VALUES (?,?,?)',
+    dbRun('INSERT INTO submissions (sociogram_id, student_id, submitted_at) VALUES (?,?,?)',
       [sg.id, studentId, now]);
   });
+
+  if (alreadySubmitted)
+    return res.status(400).json({ error: 'Al ingevuld.' });
 
   // Notify SSE listeners
   sseNotify(token);
@@ -399,7 +445,7 @@ app.get('/api/sociograms/:token/export', (req, res) => {
   responses.forEach(r => {
     const from = studentMap[r.from_student] || r.from_student;
     const to   = studentMap[r.to_student]   || r.to_student;
-    csv += `"${csvEscape(from)}","${csvEscape(to)}","${r.choice_type === 'positive' ? 'Positief' : 'Negatief'}"\n`;
+    csv += `"${csvEscape(String(from))}","${csvEscape(String(to))}","${r.choice_type === 'positive' ? 'Positief' : 'Negatief'}"\n`;
   });
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
