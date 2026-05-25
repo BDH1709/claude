@@ -1,58 +1,113 @@
 'use strict';
 
 const express = require('express');
-const Database = require('better-sqlite3');
-const path = require('path');
-const crypto = require('crypto');
+const path    = require('path');
+const crypto  = require('crypto');
+const fs      = require('fs');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app     = express();
+const PORT    = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'sociogram.db');
 
 // ---------------------------------------------------------------------------
-// Database setup
+// sql.js helpers (pure-JS SQLite, no native compilation needed)
 // ---------------------------------------------------------------------------
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+let db;
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS sociograms (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    token       TEXT    NOT NULL UNIQUE,
-    title       TEXT    NOT NULL,
-    class_name  TEXT    NOT NULL,
-    max_positive INTEGER NOT NULL DEFAULT 3,
-    max_negative INTEGER NOT NULL DEFAULT 1,
-    allow_negative INTEGER NOT NULL DEFAULT 1,
-    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
-  );
+function dbAll(sql, params) {
+  const stmt = db.prepare(sql);
+  if (params && params.length) stmt.bind(params);
+  const rows = [];
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+  return rows;
+}
 
-  CREATE TABLE IF NOT EXISTS students (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    sociogram_id  INTEGER NOT NULL REFERENCES sociograms(id) ON DELETE CASCADE,
-    name          TEXT    NOT NULL,
-    sort_order    INTEGER NOT NULL DEFAULT 0
-  );
+function dbGet(sql, params) {
+  const stmt = db.prepare(sql);
+  if (params && params.length) stmt.bind(params);
+  let row = null;
+  if (stmt.step()) row = stmt.getAsObject();
+  stmt.free();
+  return row;
+}
 
-  CREATE TABLE IF NOT EXISTS responses (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    sociogram_id INTEGER NOT NULL REFERENCES sociograms(id) ON DELETE CASCADE,
-    from_student INTEGER NOT NULL REFERENCES students(id),
-    to_student   INTEGER NOT NULL REFERENCES students(id),
-    choice_type  TEXT    NOT NULL CHECK(choice_type IN ('positive','negative')),
-    submitted_at TEXT    NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(sociogram_id, from_student, to_student, choice_type)
-  );
+function dbRun(sql, params) {
+  db.run(sql, params || []);
+}
 
-  CREATE TABLE IF NOT EXISTS submissions (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    sociogram_id INTEGER NOT NULL REFERENCES sociograms(id) ON DELETE CASCADE,
-    student_id   INTEGER NOT NULL REFERENCES students(id),
-    submitted_at TEXT    NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(sociogram_id, student_id)
-  );
-`);
+function lastId() {
+  return db.exec('SELECT last_insert_rowid()')[0].values[0][0];
+}
+
+function save() {
+  fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
+}
+
+function dbTransaction(fn) {
+  db.run('BEGIN');
+  try {
+    const result = fn();
+    db.run('COMMIT');
+    save();
+    return result;
+  } catch (e) {
+    db.run('ROLLBACK');
+    throw e;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Database initialisation
+// ---------------------------------------------------------------------------
+async function initDb() {
+  const initSqlJs = require('sql.js');
+  const SQL = await initSqlJs();
+
+  if (fs.existsSync(DB_PATH)) {
+    db = new SQL.Database(fs.readFileSync(DB_PATH));
+  } else {
+    db = new SQL.Database();
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS sociograms (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      token         TEXT    NOT NULL UNIQUE,
+      title         TEXT    NOT NULL,
+      class_name    TEXT    NOT NULL,
+      max_positive  INTEGER NOT NULL DEFAULT 3,
+      max_negative  INTEGER NOT NULL DEFAULT 1,
+      allow_negative INTEGER NOT NULL DEFAULT 1,
+      created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS students (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      sociogram_id INTEGER NOT NULL,
+      name         TEXT    NOT NULL,
+      sort_order   INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS responses (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      sociogram_id INTEGER NOT NULL,
+      from_student INTEGER NOT NULL,
+      to_student   INTEGER NOT NULL,
+      choice_type  TEXT    NOT NULL,
+      submitted_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS submissions (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      sociogram_id INTEGER NOT NULL,
+      student_id   INTEGER NOT NULL,
+      submitted_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  save();
+}
 
 // ---------------------------------------------------------------------------
 // Middleware
@@ -72,7 +127,7 @@ function generateToken() {
 // API – Sociograms (teacher)
 // ---------------------------------------------------------------------------
 
-// Create new sociogram
+// Create
 app.post('/api/sociograms', (req, res) => {
   const { title, class_name, students, max_positive = 3, max_negative = 1, allow_negative = true } = req.body;
 
@@ -81,77 +136,66 @@ app.post('/api/sociograms', (req, res) => {
   }
 
   const cleanStudents = students.map(s => s.trim()).filter(Boolean);
-  if (cleanStudents.length < 2) {
-    return res.status(400).json({ error: 'Minimaal 2 leerlingen vereist.' });
-  }
+  if (cleanStudents.length < 2) return res.status(400).json({ error: 'Minimaal 2 leerlingen vereist.' });
 
   let token;
-  // Ensure uniqueness
   for (let i = 0; i < 10; i++) {
     const candidate = generateToken();
-    const exists = db.prepare('SELECT 1 FROM sociograms WHERE token = ?').get(candidate);
-    if (!exists) { token = candidate; break; }
+    if (!dbGet('SELECT 1 FROM sociograms WHERE token = ?', [candidate])) { token = candidate; break; }
   }
   if (!token) return res.status(500).json({ error: 'Token generatie mislukt.' });
 
-  const insertSociogram = db.prepare(
-    'INSERT INTO sociograms (token, title, class_name, max_positive, max_negative, allow_negative) VALUES (?,?,?,?,?,?)'
-  );
-  const insertStudent = db.prepare(
-    'INSERT INTO students (sociogram_id, name, sort_order) VALUES (?,?,?)'
-  );
-
-  const runAll = db.transaction(() => {
-    const result = insertSociogram.run(token, title, class_name, max_positive, max_negative, allow_negative ? 1 : 0);
-    const sociogramId = result.lastInsertRowid;
+  const sociogramId = dbTransaction(() => {
+    dbRun(
+      'INSERT INTO sociograms (token, title, class_name, max_positive, max_negative, allow_negative) VALUES (?,?,?,?,?,?)',
+      [token, title, class_name, max_positive, max_negative, allow_negative ? 1 : 0]
+    );
+    const id = lastId();
     cleanStudents.forEach((name, idx) => {
-      insertStudent.run(sociogramId, name, idx);
+      dbRun('INSERT INTO students (sociogram_id, name, sort_order) VALUES (?,?,?)', [id, name, idx]);
     });
-    return sociogramId;
+    return id;
   });
 
-  const sociogramId = runAll();
   res.json({ id: sociogramId, token });
 });
 
-// List all sociograms
+// List all
 app.get('/api/sociograms', (req, res) => {
-  const rows = db.prepare(`
+  const rows = dbAll(`
     SELECT s.*,
       (SELECT COUNT(*) FROM students st WHERE st.sociogram_id = s.id) as student_count,
       (SELECT COUNT(*) FROM submissions sub WHERE sub.sociogram_id = s.id) as response_count
-    FROM sociograms s
-    ORDER BY s.created_at DESC
-  `).all();
+    FROM sociograms s ORDER BY s.created_at DESC
+  `);
   res.json(rows);
 });
 
-// Get single sociogram (for teacher results page)
+// Get single (results page)
 app.get('/api/sociograms/:token', (req, res) => {
-  const sg = db.prepare('SELECT * FROM sociograms WHERE token = ?').get(req.params.token);
+  const sg = dbGet('SELECT * FROM sociograms WHERE token = ?', [req.params.token]);
   if (!sg) return res.status(404).json({ error: 'Niet gevonden.' });
 
-  const students = db.prepare(
-    'SELECT * FROM students WHERE sociogram_id = ? ORDER BY sort_order, name'
-  ).all(sg.id);
+  const students    = dbAll('SELECT * FROM students WHERE sociogram_id = ? ORDER BY sort_order, name', [sg.id]);
+  const submissions = dbAll('SELECT student_id, submitted_at FROM submissions WHERE sociogram_id = ?', [sg.id]);
+  const responses   = dbAll('SELECT from_student, to_student, choice_type FROM responses WHERE sociogram_id = ?', [sg.id]);
+  const submittedIds = submissions.map(s => s.student_id);
 
-  const submissions = db.prepare(
-    'SELECT student_id, submitted_at FROM submissions WHERE sociogram_id = ?'
-  ).all(sg.id);
-  const submittedIds = new Set(submissions.map(s => s.student_id));
-
-  const responses = db.prepare(
-    'SELECT r.from_student, r.to_student, r.choice_type FROM responses r WHERE r.sociogram_id = ?'
-  ).all(sg.id);
-
-  res.json({ sociogram: sg, students, submissions, responses, submittedIds: [...submittedIds] });
+  res.json({ sociogram: sg, students, submissions, responses, submittedIds });
 });
 
-// Delete sociogram
+// Delete
 app.delete('/api/sociograms/:token', (req, res) => {
-  const sg = db.prepare('SELECT * FROM sociograms WHERE token = ?').get(req.params.token);
+  const sg = dbGet('SELECT * FROM sociograms WHERE token = ?', [req.params.token]);
   if (!sg) return res.status(404).json({ error: 'Niet gevonden.' });
-  db.prepare('DELETE FROM sociograms WHERE id = ?').run(sg.id);
+
+  dbTransaction(() => {
+    dbRun('DELETE FROM responses   WHERE sociogram_id = ?', [sg.id]);
+    dbRun('DELETE FROM submissions WHERE sociogram_id = ?', [sg.id]);
+    dbRun('DELETE FROM students    WHERE sociogram_id = ?', [sg.id]);
+    dbRun('DELETE FROM sociograms  WHERE id = ?',           [sg.id]);
+  });
+
   res.json({ ok: true });
 });
 
@@ -159,14 +203,12 @@ app.delete('/api/sociograms/:token', (req, res) => {
 // API – Student side
 // ---------------------------------------------------------------------------
 
-// Get sociogram info for student form (by token)
+// Get sociogram info for student form
 app.get('/api/student/:token', (req, res) => {
-  const sg = db.prepare('SELECT * FROM sociograms WHERE token = ?').get(req.params.token);
+  const sg = dbGet('SELECT * FROM sociograms WHERE token = ?', [req.params.token]);
   if (!sg) return res.status(404).json({ error: 'Sociogram niet gevonden.' });
 
-  const students = db.prepare(
-    'SELECT * FROM students WHERE sociogram_id = ? ORDER BY sort_order, name'
-  ).all(sg.id);
+  const students = dbAll('SELECT * FROM students WHERE sociogram_id = ? ORDER BY sort_order, name', [sg.id]);
 
   res.json({
     id: sg.id,
@@ -179,134 +221,107 @@ app.get('/api/student/:token', (req, res) => {
   });
 });
 
-// Check if student already submitted
+// Check if already submitted
 app.get('/api/student/:token/check/:studentId', (req, res) => {
-  const sg = db.prepare('SELECT * FROM sociograms WHERE token = ?').get(req.params.token);
+  const sg = dbGet('SELECT * FROM sociograms WHERE token = ?', [req.params.token]);
   if (!sg) return res.status(404).json({ error: 'Niet gevonden.' });
-  const sub = db.prepare(
-    'SELECT 1 FROM submissions WHERE sociogram_id = ? AND student_id = ?'
-  ).get(sg.id, req.params.studentId);
+  const sub = dbGet('SELECT 1 FROM submissions WHERE sociogram_id = ? AND student_id = ?', [sg.id, req.params.studentId]);
   res.json({ submitted: !!sub });
 });
 
 // Submit student response
 app.post('/api/student/:token/submit', (req, res) => {
-  const sg = db.prepare('SELECT * FROM sociograms WHERE token = ?').get(req.params.token);
+  const sg = dbGet('SELECT * FROM sociograms WHERE token = ?', [req.params.token]);
   if (!sg) return res.status(404).json({ error: 'Sociogram niet gevonden.' });
 
   const { student_id, positive_choices = [], negative_choices = [] } = req.body;
-
   if (!student_id) return res.status(400).json({ error: 'student_id verplicht.' });
 
-  // Validate student belongs to this sociogram
-  const student = db.prepare(
-    'SELECT * FROM students WHERE id = ? AND sociogram_id = ?'
-  ).get(student_id, sg.id);
+  const student = dbGet('SELECT * FROM students WHERE id = ? AND sociogram_id = ?', [student_id, sg.id]);
   if (!student) return res.status(400).json({ error: 'Leerling niet gevonden.' });
 
-  // Check already submitted
-  const alreadySubmitted = db.prepare(
-    'SELECT 1 FROM submissions WHERE sociogram_id = ? AND student_id = ?'
-  ).get(sg.id, student_id);
-  if (alreadySubmitted) return res.status(400).json({ error: 'Al ingevuld.' });
+  if (dbGet('SELECT 1 FROM submissions WHERE sociogram_id = ? AND student_id = ?', [sg.id, student_id])) {
+    return res.status(400).json({ error: 'Al ingevuld.' });
+  }
 
-  // Validate counts
-  if (positive_choices.length > sg.max_positive) {
+  if (positive_choices.length > sg.max_positive)
     return res.status(400).json({ error: `Maximaal ${sg.max_positive} positieve keuzes.` });
-  }
-  if (sg.allow_negative && negative_choices.length > sg.max_negative) {
+  if (sg.allow_negative && negative_choices.length > sg.max_negative)
     return res.status(400).json({ error: `Maximaal ${sg.max_negative} negatieve keuzes.` });
-  }
 
-  // No self-selection, no overlap
-  const allChoices = [...positive_choices, ...negative_choices];
-  if (allChoices.includes(parseInt(student_id))) {
+  const allIds = [...positive_choices, ...negative_choices].map(Number);
+  if (allIds.includes(Number(student_id)))
     return res.status(400).json({ error: 'Je kunt jezelf niet kiezen.' });
-  }
 
-  const insertResponse = db.prepare(
-    'INSERT OR IGNORE INTO responses (sociogram_id, from_student, to_student, choice_type) VALUES (?,?,?,?)'
-  );
-  const insertSubmission = db.prepare(
-    'INSERT INTO submissions (sociogram_id, student_id) VALUES (?,?)'
-  );
-
-  const runAll = db.transaction(() => {
+  dbTransaction(() => {
+    const now = new Date().toISOString();
     positive_choices.forEach(toId => {
-      insertResponse.run(sg.id, student_id, toId, 'positive');
+      if (!dbGet('SELECT 1 FROM responses WHERE sociogram_id=? AND from_student=? AND to_student=? AND choice_type=?',
+          [sg.id, student_id, toId, 'positive'])) {
+        dbRun('INSERT INTO responses (sociogram_id, from_student, to_student, choice_type, submitted_at) VALUES (?,?,?,?,?)',
+          [sg.id, student_id, toId, 'positive', now]);
+      }
     });
     if (sg.allow_negative) {
       negative_choices.forEach(toId => {
-        insertResponse.run(sg.id, student_id, toId, 'negative');
+        if (!dbGet('SELECT 1 FROM responses WHERE sociogram_id=? AND from_student=? AND to_student=? AND choice_type=?',
+            [sg.id, student_id, toId, 'negative'])) {
+          dbRun('INSERT INTO responses (sociogram_id, from_student, to_student, choice_type, submitted_at) VALUES (?,?,?,?,?)',
+            [sg.id, student_id, toId, 'negative', now]);
+        }
       });
     }
-    insertSubmission.run(sg.id, student_id);
+    dbRun('INSERT INTO submissions (sociogram_id, student_id, submitted_at) VALUES (?,?,?)',
+      [sg.id, student_id, now]);
   });
 
-  runAll();
   res.json({ ok: true, name: student.name });
 });
 
 // ---------------------------------------------------------------------------
-// API – Export CSV
+// API – CSV Export
 // ---------------------------------------------------------------------------
 app.get('/api/sociograms/:token/export', (req, res) => {
-  const sg = db.prepare('SELECT * FROM sociograms WHERE token = ?').get(req.params.token);
+  const sg = dbGet('SELECT * FROM sociograms WHERE token = ?', [req.params.token]);
   if (!sg) return res.status(404).json({ error: 'Niet gevonden.' });
 
-  const students = db.prepare(
-    'SELECT * FROM students WHERE sociogram_id = ? ORDER BY sort_order, name'
-  ).all(sg.id);
-
-  const responses = db.prepare(
-    'SELECT r.from_student, r.to_student, r.choice_type FROM responses r WHERE r.sociogram_id = ?'
-  ).all(sg.id);
-
-  const submissions = db.prepare(
-    'SELECT student_id FROM submissions WHERE sociogram_id = ?'
-  ).all(sg.id);
+  const students    = dbAll('SELECT * FROM students WHERE sociogram_id = ? ORDER BY sort_order, name', [sg.id]);
+  const responses   = dbAll('SELECT from_student, to_student, choice_type FROM responses WHERE sociogram_id = ?', [sg.id]);
+  const submissions = dbAll('SELECT student_id FROM submissions WHERE sociogram_id = ?', [sg.id]);
   const submittedSet = new Set(submissions.map(s => s.student_id));
-
   const studentMap = {};
   students.forEach(s => { studentMap[s.id] = s.name; });
 
-  // Build adjacency for analysis
-  const positiveIn = {};
-  const negativeIn = {};
-  students.forEach(s => { positiveIn[s.id] = 0; negativeIn[s.id] = 0; });
+  const posIn = {}, negIn = {};
+  students.forEach(s => { posIn[s.id] = 0; negIn[s.id] = 0; });
   responses.forEach(r => {
-    if (r.choice_type === 'positive') positiveIn[r.to_student] = (positiveIn[r.to_student] || 0) + 1;
-    else negativeIn[r.to_student] = (negativeIn[r.to_student] || 0) + 1;
+    if (r.choice_type === 'positive') posIn[r.to_student] = (posIn[r.to_student] || 0) + 1;
+    else negIn[r.to_student] = (negIn[r.to_student] || 0) + 1;
   });
 
-  // Header
-  let csv = 'Naam,Ingediend,Positieve keuzes ontvangen,Negatieve keuzes ontvangen,Sociometrische status\n';
+  let csv = 'Naam,Ingediend,Positieve keuzes,Negatieve keuzes,Status\n';
   students.forEach(s => {
-    const posScore = positiveIn[s.id] || 0;
-    const negScore = negativeIn[s.id] || 0;
-    const net = posScore - negScore;
+    const pos = posIn[s.id] || 0, neg = negIn[s.id] || 0, net = pos - neg;
     let status = 'Gemiddeld';
-    if (posScore === 0 && negScore === 0 && submittedSet.size > 0) status = 'Geïsoleerd';
+    if (pos === 0 && neg === 0 && submittedSet.size > 0) status = 'Geïsoleerd';
     else if (net >= 3) status = 'Ster';
     else if (net <= -2) status = 'Afgewezen';
-    else if (posScore <= 1 && negScore === 0) status = 'Verwaarloosd';
-
-    csv += `"${s.name}",${submittedSet.has(s.id) ? 'Ja' : 'Nee'},${posScore},${negScore},"${status}"\n`;
+    else if (pos <= 1 && neg === 0) status = 'Verwaarloosd';
+    csv += `"${s.name}",${submittedSet.has(s.id) ? 'Ja' : 'Nee'},${pos},${neg},"${status}"\n`;
   });
 
-  csv += '\nKeuzes detail\n';
-  csv += 'Van,Naar,Type\n';
+  csv += '\nKeuzes\nVan,Naar,Type\n';
   responses.forEach(r => {
     csv += `"${studentMap[r.from_student]}","${studentMap[r.to_student]}","${r.choice_type === 'positive' ? 'Positief' : 'Negatief'}"\n`;
   });
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="sociogram-${sg.token}.csv"`);
-  res.send('﻿' + csv); // BOM for Excel
+  res.send('﻿' + csv);
 });
 
 // ---------------------------------------------------------------------------
-// Catch-all: serve index.html for unknown routes (SPA style)
+// Catch-all → SPA
 // ---------------------------------------------------------------------------
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -315,6 +330,11 @@ app.get('*', (req, res) => {
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`Sociogram server draait op http://localhost:${PORT}`);
+initDb().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Sociogram draait op http://localhost:${PORT}`);
+  });
+}).catch(err => {
+  console.error('Database fout:', err);
+  process.exit(1);
 });
