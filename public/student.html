@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sociogram – Leerlingenformulier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body { background: #f8fafc; }
+
+    /* Step indicator */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 2rem 0 1.5rem;
+      position: relative;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+      position: relative;
+      z-index: 1;
+    }
+    .step-dot {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .85rem;
+      border: 2px solid var(--border);
+      background: var(--white);
+      color: var(--text-muted);
+      transition: all .3s;
+    }
+    .step.active .step-dot {
+      background: linear-gradient(135deg, var(--primary), var(--violet));
+      border-color: transparent;
+      color: white;
+      box-shadow: 0 4px 12px rgba(99,102,241,.4);
+    }
+    .step.done .step-dot {
+      background: linear-gradient(135deg, var(--success), #059669);
+      border-color: transparent;
+      color: white;
+    }
+    .step-label {
+      font-size: .73rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .step.active .step-label { color: var(--primary); }
+    .step.done .step-label  { color: var(--success); }
+    .step-line {
+      width: 60px; height: 2px;
+      background: var(--border);
+      margin: 0 .5rem;
+      margin-bottom: 1.5rem;
+      transition: background .3s;
+    }
+    .step-line.done { background: linear-gradient(90deg, var(--success), var(--primary)); }
+
+    /* Section header chips */
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .3rem .85rem;
+      border-radius: 99px;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-bottom: .75rem;
+    }
+    .tag-positive { background: linear-gradient(135deg,#d1fae5,#a7f3d0); color: #065f46; }
+    .tag-negative { background: linear-gradient(135deg,#ffe4e6,#fecdd3); color: #be123c; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <a href="#" class="logo" onclick="return false;" style="cursor:default;">
+        <div class="logo-icon">⬡</div>
+        Sociogram
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- LOADING -->
+<div id="view-loading" style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
+  <div class="loading-overlay">
+    <div class="spinner"></div>
+    <span>Formulier laden…</span>
+  </div>
+</div>
+
+<!-- ERROR -->
+<div id="view-error" style="display:none;padding:4rem 1rem;">
+  <div class="container-sm" style="text-align:center;">
+    <div style="font-size:3.5rem;margin-bottom:1rem;">😕</div>
+    <h2 style="margin-bottom:.5rem;">Link niet gevonden</h2>
+    <div class="alert alert-danger" id="error-msg" style="margin:1.5rem auto;max-width:460px;text-align:left;"></div>
+    <p>Vraag jouw docent om de juiste link.</p>
+  </div>
+</div>
+
+<!-- SELECT STUDENT -->
+<div id="view-select-student" style="display:none;">
+  <div class="student-hero">
+    <div class="hero-icon">📋</div>
+    <h1 id="hero-title">Sociogram</h1>
+    <p id="hero-class">Klas</p>
+  </div>
+
+  <div class="container-sm" style="padding-top:3.5rem;padding-bottom:5rem;">
+    <div class="student-card">
+      <div style="text-align:center;margin-bottom:1.75rem;">
+        <h2 style="margin-bottom:.4rem;">Wie ben jij?</h2>
+        <p>Zoek jouw naam in de lijst hieronder om te beginnen.</p>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="student-search" placeholder="🔍  Begin met typen om te zoeken…" autocomplete="off"
+          style="font-size:1rem;padding:.8rem 1rem;" />
+      </div>
+
+      <div id="student-name-list" class="choice-grid" style="margin-top:.5rem;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div id="view-form" style="display:none;">
+  <div class="student-hero">
+    <div class="hero-icon">✏️</div>
+    <h1 id="form-hero-title">Sociogram</h1>
+    <p id="form-hero-sub">Klas</p>
+  </div>
+
+  <div class="container-sm" style="padding-top:3.5rem;padding-bottom:5rem;">
+
+    <!-- Greeting -->
+    <div class="student-card" style="background:linear-gradient(135deg,#4338ca,#6366f1,#8b5cf6);border:none;text-align:center;color:white;padding:2.5rem 2rem;">
+      <div style="font-size:3rem;margin-bottom:.75rem;filter:drop-shadow(0 4px 8px rgba(0,0,0,.2));">👋</div>
+      <h2 id="greeting-name" style="color:white;margin-bottom:.4rem;font-size:1.6rem;">Hallo!</h2>
+      <p style="color:rgba(255,255,255,.8);margin:0;max-width:380px;margin:0 auto;">
+        Beantwoord de vragen eerlijk. Jouw antwoorden zijn <strong style="color:white;">vertrouwelijk</strong> en alleen zichtbaar voor de docent.
+      </p>
+    </div>
+
+    <!-- Positive choices -->
+    <div class="student-card" id="pos-card">
+      <div class="section-tag tag-positive">💚 Positieve keuzes</div>
+      <h3 style="margin-bottom:.4rem;">Met wie werk jij graag samen?</h3>
+      <p style="margin-bottom:1rem;">Kies maximaal <strong id="max-pos-label" style="color:var(--success);">3</strong> klasgenoten die je leuk vindt om mee samen te werken.</p>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;flex-wrap:wrap;gap:.5rem;">
+        <span id="pos-counter" class="badge badge-neutral">0 / 3 gekozen</span>
+        <input type="text" id="pos-search" placeholder="🔍 Zoek naam…" autocomplete="off"
+          style="max-width:200px;padding:.45rem .8rem;font-size:.85rem;" />
+      </div>
+
+      <div id="pos-list" class="choice-grid"></div>
+    </div>
+
+    <!-- Negative choices -->
+    <div class="student-card" id="neg-card" style="margin-top:1.25rem;">
+      <div class="section-tag tag-negative">🔴 Negatieve keuzes</div>
+      <h3 style="margin-bottom:.4rem;">Met wie werk jij liever niet samen?</h3>
+      <p style="margin-bottom:1rem;">Dit is <em>optioneel</em>. Kies maximaal <strong id="max-neg-label" style="color:var(--danger);">1</strong> klasgenoot.</p>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;flex-wrap:wrap;gap:.5rem;">
+        <span id="neg-counter" class="badge badge-neutral">0 / 1 gekozen</span>
+        <input type="text" id="neg-search" placeholder="🔍 Zoek naam…" autocomplete="off"
+          style="max-width:200px;padding:.45rem .8rem;font-size:.85rem;" />
+      </div>
+
+      <div id="neg-list" class="choice-grid"></div>
+    </div>
+
+    <div id="submit-error" class="alert alert-danger" style="display:none;margin-top:1rem;"></div>
+
+    <!-- Submit -->
+    <div style="margin-top:1.75rem;text-align:center;">
+      <button class="btn btn-primary btn-lg w-full" id="btn-submit" style="max-width:440px;font-size:1rem;padding:1rem 2rem;">
+        Antwoorden versturen →
+      </button>
+      <p class="text-muted" style="margin-top:.75rem;font-size:.8rem;">
+        🔒 Je antwoorden worden veilig opgeslagen en zijn vertrouwelijk.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ALREADY SUBMITTED -->
+<div id="view-already" style="display:none;min-height:60vh;display:none;align-items:center;justify-content:center;padding:3rem 1rem;">
+  <div class="container-sm">
+    <div class="student-card" style="text-align:center;padding:3rem 2rem;">
+      <div style="font-size:4rem;margin-bottom:1rem;">✅</div>
+      <h2 style="margin-bottom:.5rem;">Al ingevuld</h2>
+      <p>Je hebt dit sociogram al eerder ingevuld. Bedankt!</p>
+    </div>
+  </div>
+</div>
+
+<!-- THANK YOU -->
+<div id="view-thanks" style="display:none;padding:3rem 1rem;">
+  <div class="container-sm">
+    <div class="student-card" style="text-align:center;padding:3.5rem 2rem;background:linear-gradient(135deg,#065f46,#059669,#10b981);border:none;color:white;">
+      <div style="font-size:4.5rem;margin-bottom:1rem;filter:drop-shadow(0 4px 12px rgba(0,0,0,.25));animation:bounce 1s ease .2s both;">🎉</div>
+      <h2 style="color:white;margin-bottom:.5rem;font-size:1.8rem;">Bedankt, <span id="thanks-name"></span>!</h2>
+      <p style="color:rgba(255,255,255,.85);margin-bottom:1.5rem;">Je antwoorden zijn opgeslagen. Je kunt dit venster sluiten.</p>
+      <div style="background:rgba(255,255,255,.15);border-radius:var(--radius);padding:.75rem 1.5rem;display:inline-block;font-size:.9rem;color:rgba(255,255,255,.9);">
+        ✓ Succesvol verstuurd
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<style>
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    40% { transform: translateY(-16px); }
+    60% { transform: translateY(-8px); }
+  }
+</style>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const views = ['view-loading','view-error','view-select-student','view-form','view-already','view-thanks'];
+function showView(id) {
+  views.forEach(v => { $(v).style.display = v === id ? '' : 'none'; });
+}
+
+function showToast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  $('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+const params = new URLSearchParams(location.search);
+const token  = params.get('token');
+
+if (!token) {
+  showView('view-error');
+  $('error-msg').textContent = 'Geen geldige link. Vraag jouw docent om de juiste link.';
+}
+
+let sociogramData    = null;
+let selectedStudentId = null;
+let positiveChoices  = new Set();
+let negativeChoices  = new Set();
+
+async function init() {
+  if (!token) return;
+  try {
+    const res  = await fetch(`/api/student/${token}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Fout bij laden.');
+
+    sociogramData = data;
+    $('hero-title').textContent      = data.title;
+    $('form-hero-title').textContent = data.title;
+    $('hero-class').textContent      = `Klas ${data.class_name}`;
+    $('form-hero-sub').textContent   = `Klas ${data.class_name}`;
+    $('max-pos-label').textContent   = data.max_positive;
+    $('max-neg-label').textContent   = data.max_negative;
+
+    if (!data.allow_negative) $('neg-card').style.display = 'none';
+
+    renderStudentList();
+    showView('view-select-student');
+  } catch(e) {
+    showView('view-error');
+    $('error-msg').textContent = e.message;
+  }
+}
+
+function renderStudentList(filter = '') {
+  const list = $('student-name-list');
+  const lf   = filter.toLowerCase();
+  const filtered = sociogramData.students.filter(s => !filter || s.name.toLowerCase().includes(lf));
+
+  if (!filtered.length) {
+    list.innerHTML = `<p class="text-muted" style="grid-column:1/-1;text-align:center;padding:1rem;">Geen leerlingen gevonden.</p>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => `
+    <div class="choice-item" data-id="${s.id}" role="button" tabindex="0" aria-label="Kies ${s.name}">
+      <div class="choice-avatar">${initials(s.name)}</div>
+      <span class="choice-name">${escHtml(s.name)}</span>
+      <span class="choice-check">→</span>
+    </div>`).join('');
+
+  list.querySelectorAll('.choice-item').forEach(el => {
+    el.addEventListener('click', () => selectSelf(parseInt(el.dataset.id)));
+    el.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') selectSelf(parseInt(el.dataset.id)); });
+  });
+}
+
+$('student-search').addEventListener('input', function() { renderStudentList(this.value); });
+
+async function selectSelf(studentId) {
+  try {
+    const res  = await fetch(`/api/student/${token}/check/${studentId}`);
+    const data = await res.json();
+    if (data.submitted) { showView('view-already'); return; }
+  } catch(e) {}
+
+  selectedStudentId = studentId;
+  const student = sociogramData.students.find(s => s.id === studentId);
+  if (!student) { showView('view-error'); $('error-msg').textContent = 'Leerling niet gevonden.'; return; }
+  $('greeting-name').textContent = `Hallo, ${student.name}!`;
+
+  positiveChoices.clear();
+  negativeChoices.clear();
+  renderChoiceList('pos', '');
+  renderChoiceList('neg', '');
+  updateCounters();
+  showView('view-form');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderChoiceList(type, filter) {
+  const listEl  = $(type === 'pos' ? 'pos-list' : 'neg-list');
+  const lf      = filter.toLowerCase();
+  const filtered = sociogramData.students.filter(s => {
+    if (s.id === selectedStudentId) return false;
+    if (filter && !s.name.toLowerCase().includes(lf)) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    listEl.innerHTML = `<p class="text-muted" style="grid-column:1/-1;text-align:center;padding:1rem;">Geen leerlingen gevonden.</p>`;
+    return;
+  }
+
+  const maxVal  = sociogramData[type === 'pos' ? 'max_positive' : 'max_negative'];
+  const selected = type === 'pos' ? positiveChoices : negativeChoices;
+  const other    = type === 'pos' ? negativeChoices : positiveChoices;
+
+  listEl.innerHTML = filtered.map(s => {
+    const isSel      = selected.has(s.id);
+    const isOther    = other.has(s.id);
+    const maxReached = selected.size >= maxVal && !isSel;
+    let cls = 'choice-item';
+    let checkIcon = '';
+    let disabledAttr = '';
+
+    if (isSel) {
+      cls += type === 'pos' ? ' selected-pos' : ' selected-neg';
+      checkIcon = type === 'pos' ? '✓' : '✗';
+    } else if (maxReached || isOther) {
+      cls += type === 'pos' ? ' disabled-pos' : ' disabled-neg';
+      disabledAttr = 'aria-disabled="true" tabindex="-1"';
+    }
+
+    return `
+      <div class="${cls}" data-id="${s.id}" ${disabledAttr} role="button" tabindex="${disabledAttr ? -1 : 0}">
+        <div class="choice-avatar">${initials(s.name)}</div>
+        <span class="choice-name">${escHtml(s.name)}</span>
+        <span class="choice-check">${checkIcon}</span>
+      </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('.choice-item:not([aria-disabled])').forEach(el => {
+    el.addEventListener('click', () => toggleChoice(type, parseInt(el.dataset.id)));
+    el.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') toggleChoice(type, parseInt(el.dataset.id)); });
+  });
+}
+
+function toggleChoice(type, studentId) {
+  const selected = type === 'pos' ? positiveChoices : negativeChoices;
+  const other    = type === 'pos' ? negativeChoices : positiveChoices;
+  const maxVal   = type === 'pos' ? sociogramData.max_positive : sociogramData.max_negative;
+
+  if (other.has(studentId)) return;
+
+  if (selected.has(studentId)) {
+    selected.delete(studentId);
+  } else {
+    if (selected.size >= maxVal) {
+      showToast(`Maximaal ${maxVal} keuze${maxVal === 1 ? '' : 's'} toegestaan.`, 'error');
+      return;
+    }
+    selected.add(studentId);
+  }
+
+  renderChoiceList('pos', $('pos-search').value);
+  renderChoiceList('neg', $('neg-search').value);
+  updateCounters();
+}
+
+function updateCounters() {
+  const maxPos = sociogramData.max_positive;
+  const maxNeg = sociogramData.max_negative;
+  const pc = $('pos-counter'), nc = $('neg-counter');
+  pc.textContent = `${positiveChoices.size} / ${maxPos} gekozen`;
+  nc.textContent = `${negativeChoices.size} / ${maxNeg} gekozen`;
+  pc.className = 'badge ' + (positiveChoices.size > 0 ? 'badge-success' : 'badge-neutral');
+  nc.className = 'badge ' + (negativeChoices.size > 0 ? 'badge-danger' : 'badge-neutral');
+}
+
+$('pos-search').addEventListener('input', function() { renderChoiceList('pos', this.value); });
+$('neg-search').addEventListener('input', function() { renderChoiceList('neg', this.value); });
+
+$('btn-submit').addEventListener('click', async () => {
+  if (positiveChoices.size === 0) {
+    $('submit-error').textContent = 'Kies minstens één klasgenoot bij de eerste vraag.';
+    $('submit-error').style.display = 'flex';
+    $('pos-card').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  $('submit-error').style.display = 'none';
+
+  const btn = $('btn-submit');
+  btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;margin:0;border-width:2px;border-top-color:white;"></span> Versturen…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`/api/student/${token}/submit`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        student_id: selectedStudentId,
+        positive_choices: [...positiveChoices],
+        negative_choices: [...negativeChoices]
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Fout bij versturen.');
+
+    $('thanks-name').textContent = data.name || '';
+    showView('view-thanks');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(e) {
+    $('submit-error').textContent = e.message;
+    $('submit-error').style.display = 'flex';
+    btn.innerHTML = 'Antwoorden versturen →';
+    btn.disabled = false;
+  }
+});
+
+function initials(name) {
+  return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
+
+if (token) init();
+</script>
+</body>
+</html>

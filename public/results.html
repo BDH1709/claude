@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sociogram – Resultaten</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <style>
+    .results-hero {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 70%, #4f46e5 100%);
+      padding: 2.5rem 0 4rem;
+      margin-bottom: -2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .results-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 85% 30%, rgba(139,92,246,.25) 0%, transparent 40%),
+        radial-gradient(circle at 15% 70%, rgba(6,182,212,.15) 0%, transparent 40%);
+    }
+    .results-hero h1 { color: white; position: relative; }
+    .results-hero p  { color: rgba(255,255,255,.7); position: relative; }
+    .results-hero .hero-badge {
+      display: inline-flex; align-items: center; gap: .45rem;
+      background: rgba(255,255,255,.15);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: .3rem .9rem;
+      border-radius: 99px;
+      font-size: .8rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,.25);
+      margin-bottom: 1rem;
+    }
+
+    #graph-tooltip {
+      position: fixed;
+      background: rgba(15,23,42,.95);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: .75rem 1rem;
+      border-radius: var(--radius);
+      font-size: .85rem;
+      pointer-events: none;
+      z-index: 9999;
+      max-width: 250px;
+      display: none;
+      border: 1px solid rgba(255,255,255,.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+      line-height: 1.6;
+    }
+
+    .filter-group {
+      display: flex; gap: .35rem;
+      background: var(--neutral-light);
+      padding: .3rem;
+      border-radius: 10px;
+    }
+    .filter-btn {
+      padding: .35rem .85rem;
+      border-radius: 7px;
+      border: none;
+      font-family: var(--font);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .filter-btn.active {
+      background: var(--white);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-label {
+      display: flex; align-items: center; gap: .6rem; margin-bottom: 1rem;
+    }
+    .section-label h3 { margin: 0; }
+    .section-label .label-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    }
+
+    .graph-legend-bar {
+      display: flex; flex-wrap: wrap; gap: .5rem 1.1rem;
+      padding: .75rem 1rem;
+      background: rgba(255,255,255,.06);
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .graph-legend-bar .legend-item { color: rgba(255,255,255,.65); }
+
+    /* Per-student tab */
+    .student-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: .6rem;
+      margin-bottom: 1.5rem;
+    }
+    .student-sel-btn {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .6rem .9rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: .85rem;
+      font-weight: 500;
+      transition: var(--transition);
+      text-align: left;
+      color: var(--text);
+    }
+    .student-sel-btn:hover { border-color: var(--primary); background: #f5f3ff; }
+    .student-sel-btn.active {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .student-sel-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    .student-profile-card {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .student-profile-header {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+    }
+    .student-avatar {
+      width: 56px; height: 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 800; color: white;
+      flex-shrink: 0;
+    }
+    .student-metrics-mini {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; margin-bottom: 1.25rem;
+    }
+    @media (max-width: 600px) { .student-metrics-mini { grid-template-columns: repeat(2, 1fr); } }
+    .mini-metric {
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .65rem .75rem; text-align: center;
+    }
+    .mini-metric .val { font-size: 1.4rem; font-weight: 800; line-height: 1; }
+    .mini-metric .lbl { font-size: .72rem; color: var(--text-muted); margin-top: .25rem; }
+
+    .choice-columns {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+    @media (max-width: 600px) { .choice-columns { grid-template-columns: 1fr; } }
+    .choice-col { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+    .choice-col h4 { margin: 0 0 .75rem; font-size: .9rem; }
+    .choice-pill {
+      display: inline-flex; align-items: center; gap: .35rem;
+      padding: .3rem .75rem; border-radius: 99px;
+      font-size: .82rem; font-weight: 600; margin: .2rem;
+    }
+
+    /* Score bar chart */
+    .score-bar-wrap { margin: .35rem 0; }
+    .score-bar-track {
+      height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 3px;
+    }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+
+    /* Detail modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,.65);
+      backdrop-filter: blur(4px); z-index: 10000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: white; border-radius: var(--radius-lg);
+      width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,.35);
+      transform: translateY(24px); transition: transform .2s;
+    }
+    .modal-overlay.open .modal-box { transform: none; }
+    .modal-head {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .75rem;
+    }
+    .modal-body { padding: 1.25rem 1.5rem; }
+    .modal-close {
+      margin-left: auto; background: none; border: none;
+      font-size: 1.4rem; cursor: pointer; color: var(--text-muted);
+      line-height: 1; padding: .2rem .4rem; border-radius: 6px;
+    }
+    .modal-close:hover { background: var(--border); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <a href="/" class="logo">
+        <div class="logo-icon">⬡</div>
+        Sociogram
+      </a>
+      <div style="display:flex;gap:.5rem;align-items:center;" id="header-actions"></div>
+    </div>
+  </div>
+</header>
+
+<!-- LOADING -->
+<div id="view-loading" style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
+  <div class="loading-overlay">
+    <div class="spinner"></div>
+    <span>Resultaten laden…</span>
+  </div>
+</div>
+
+<!-- ERROR -->
+<div id="view-error" style="display:none;padding:4rem 1rem;">
+  <div class="container" style="text-align:center;">
+    <div style="font-size:3.5rem;margin-bottom:1rem;">😕</div>
+    <h2 style="margin-bottom:.5rem;">Sociogram niet gevonden</h2>
+    <div class="alert alert-danger" id="error-msg" style="display:inline-flex;max-width:460px;margin:1.5rem auto;"></div>
+    <div><a href="/" class="btn btn-outline">← Terug naar dashboard</a></div>
+  </div>
+</div>
+
+<!-- MAIN RESULTS -->
+<div id="view-results" style="display:none;">
+
+  <div class="results-hero">
+    <div class="container">
+      <div class="hero-badge">📊 Analyse resultaten</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;position:relative;">
+        <div>
+          <h1 id="result-title" style="margin:0 0 .35rem;font-size:2rem;"></h1>
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+            <span class="badge" id="result-class"
+              style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.3);"></span>
+            <span style="color:rgba(255,255,255,.6);font-size:.85rem;" id="result-meta"></span>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <a id="btn-export" href="#" class="btn"
+            style="background:rgba(255,255,255,.15);color:white;border-color:rgba(255,255,255,.3);backdrop-filter:blur(8px);">
+            ↓ CSV exporteren
+          </a>
+          <button id="btn-refresh" class="btn"
+            style="background:rgba(255,255,255,.15);color:white;border-color:rgba(255,255,255,.3);backdrop-filter:blur(8px);">
+            ↻ Vernieuwen
+          </button>
+          <a href="/" class="btn"
+            style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2);backdrop-filter:blur(8px);">
+            ← Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main style="padding:2rem 0 5rem;">
+  <div class="container">
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="card">
+      <div class="card-header" style="border-bottom:none;padding-bottom:.5rem;">
+        <nav class="tab-nav" id="tab-nav" style="border:none;flex:1;flex-wrap:wrap;">
+          <button class="tab-btn active" data-tab="graph">🕸 Netwerk</button>
+          <button class="tab-btn" data-tab="ranking">🏆 Ranglijst</button>
+          <button class="tab-btn" data-tab="heatmap">🔲 Keuzetabel</button>
+          <button class="tab-btn" data-tab="clusters">👥 Clusters</button>
+          <button class="tab-btn" data-tab="metrics">📊 Statistieken</button>
+          <button class="tab-btn" data-tab="perstudent">👤 Per Leerling</button>
+          <button class="tab-btn" data-tab="status">✅ Deelname</button>
+        </nav>
+      </div>
+
+      <div class="card-body" style="padding-top:1rem;">
+
+        <!-- ========== TAB: GRAPH ========== -->
+        <div class="tab-content active" id="tab-graph">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem;">
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">Alles</button>
+              <button class="filter-btn" data-filter="positive">💚 Positief</button>
+              <button class="filter-btn" data-filter="negative">🔴 Negatief</button>
+            </div>
+            <p style="font-size:.8rem;margin:0;">Sleep nodes · Scroll = zoom · Hover = details · Klik = profiel</p>
+          </div>
+
+          <div id="graph-container" style="height:540px;position:relative;">
+            <svg id="graph-svg"></svg>
+            <div class="graph-controls-overlay">
+              <button class="graph-ctrl-btn" id="zoom-in" title="Inzoomen">+</button>
+              <button class="graph-ctrl-btn" id="zoom-out" title="Uitzoomen">−</button>
+              <button class="graph-ctrl-btn" id="zoom-reset" title="Reset">⌖</button>
+            </div>
+            <div class="graph-legend-bar" style="position:absolute;bottom:0;left:0;right:0;flex-wrap:wrap;">
+              <span class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Ster</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#10b981;"></span>Populair</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#6366f1;"></span>Gemiddeld</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Controversieel</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span>Verwaarloosd</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#f43f5e;"></span>Afgewezen/Geïsoleerd</span>
+              <span class="legend-item"><span style="display:inline-block;width:20px;height:2px;background:#10b981;border-radius:2px;"></span>Positief</span>
+              <span class="legend-item"><span style="display:inline-block;width:20px;height:2px;background:#f43f5e;border-radius:2px;border-top:2px dashed #f43f5e;"></span>Negatief</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: RANKING ========== -->
+        <div class="tab-content" id="tab-ranking">
+          <div class="form-row" style="gap:2rem;align-items:flex-start;">
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#d1fae5;">💚</div>
+                <h3>Meest positief gekozen</h3>
+              </div>
+              <ol class="ranking-list" id="ranking-pos"></ol>
+            </div>
+            <div id="ranking-neg-section">
+              <div class="section-label">
+                <div class="label-icon" style="background:#ffe4e6;">🔴</div>
+                <h3>Meest negatief gekozen</h3>
+              </div>
+              <ol class="ranking-list" id="ranking-neg"></ol>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="form-row" style="gap:2rem;align-items:flex-start;flex-wrap:wrap;">
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#fef3c7;">⭐</div>
+                <h3>Sterren</h3>
+              </div>
+              <div id="stars-list"></div>
+            </div>
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#fff7ed;">🔥</div>
+                <h3>Controversieel</h3>
+              </div>
+              <p style="font-size:.85rem;margin-bottom:.75rem;">Zowel veel positief als negatief gekozen</p>
+              <div id="controversial-list"></div>
+            </div>
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#dbeafe;">🔁</div>
+                <h3>Wederkerige verbindingen</h3>
+              </div>
+              <div id="reciprocal-list"></div>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="form-row" style="gap:2rem;align-items:flex-start;">
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#f1f5f9;">👻</div>
+                <h3>Verwaarloosd</h3>
+              </div>
+              <p style="font-size:.85rem;margin-bottom:.75rem;">Nauwelijks gezien door de groep (laag zichtbaar)</p>
+              <div id="neglected-list"></div>
+            </div>
+            <div>
+              <div class="section-label">
+                <div class="label-icon" style="background:#ffe4e6;">🚨</div>
+                <h3>Geïsoleerd</h3>
+              </div>
+              <p style="font-size:.85rem;margin-bottom:.75rem;">Helemaal niet gekozen door klasgenoten</p>
+              <div id="isolated-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: HEATMAP ========== -->
+        <div class="tab-content" id="tab-heatmap">
+          <p style="margin-bottom:1rem;">Rijen = wie koos, kolommen = wie werd gekozen.
+            <span style="background:#d1fae5;color:#065f46;padding:.1rem .45rem;border-radius:5px;font-weight:700;">+</span> positief
+            &nbsp;·&nbsp;
+            <span style="background:#ffe4e6;color:#be123c;padding:.1rem .45rem;border-radius:5px;font-weight:700;">−</span> negatief
+          </p>
+          <div id="heatmap-container">
+            <div id="heatmap-inner"></div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: CLUSTERS ========== -->
+        <div class="tab-content" id="tab-clusters">
+          <p style="margin-bottom:1.5rem;">Subgroepen berekend via label propagation op positieve verbindingen.</p>
+          <div id="clusters-list" style="display:flex;flex-direction:column;gap:.85rem;"></div>
+        </div>
+
+        <!-- ========== TAB: METRICS ========== -->
+        <div class="tab-content" id="tab-metrics">
+          <p style="margin-bottom:.75rem;">Sociometrische statistieken per leerling. Klik een rij voor het volledige profiel.</p>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:1.25rem;">
+            <strong>SP</strong> = Sociale Voorkeur (+ ontvangen − − ontvangen) &nbsp;·&nbsp;
+            <strong>Impact</strong> = totale zichtbaarheid (+ ontvangen + − ontvangen) &nbsp;·&nbsp;
+            <strong>SI</strong> = Sociometrisch Index SP/(N−1), bereik −1…+1
+          </p>
+          <div style="overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);">
+            <table>
+              <thead>
+                <tr>
+                  <th>Leerling</th>
+                  <th title="Positieve nominaties ontvangen">+ Ontv.</th>
+                  <th title="Negatieve nominaties ontvangen">− Ontv.</th>
+                  <th title="Positieve nominaties gegeven">+ Gegeven</th>
+                  <th title="Sociale Voorkeur = pos_in − neg_in">SP</th>
+                  <th title="Sociale Impact = pos_in + neg_in">Impact</th>
+                  <th title="Sociometrisch Index = SP / (N−1)">SI</th>
+                  <th title="Wederkerigheid">Wederker.</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="metrics-tbody"></tbody>
+            </table>
+          </div>
+          <hr class="divider" />
+          <h3 style="margin-bottom:1rem;">Groepsindicatoren</h3>
+          <div id="group-metrics"></div>
+        </div>
+
+        <!-- ========== TAB: PER LEERLING ========== -->
+        <div class="tab-content" id="tab-perstudent">
+          <p style="margin-bottom:1.25rem;">Selecteer een leerling om het volledige sociometrische profiel te bekijken.</p>
+          <div class="student-selector" id="student-selector"></div>
+          <div id="student-profile-area"></div>
+        </div>
+
+        <!-- ========== TAB: STATUS ========== -->
+        <div class="tab-content" id="tab-status">
+          <p style="margin-bottom:1.5rem;">Overzicht van welke leerlingen het formulier al hebben ingevuld. Ververst automatisch.</p>
+          <div id="status-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  </main>
+</div>
+
+<!-- Graph tooltip -->
+<div id="graph-tooltip"></div>
+
+<!-- Student detail modal -->
+<div class="modal-overlay" id="student-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="student-avatar" id="modal-avatar" style="width:44px;height:44px;font-size:1.1rem;border-radius:10px;"></div>
+      <div>
+        <div style="font-weight:800;font-size:1.1rem;" id="modal-name"></div>
+        <div id="modal-status-badge"></div>
+      </div>
+      <button class="modal-close" id="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+/* =========================================================
+   Results Page – D3 + Advanced Sociometric Analysis
+   ========================================================= */
+
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const token = params.get('token');
+let lastData = null;
+let simulation = null;
+let currentFilter = 'all';
+let zoomBehavior = null;
+let svgRef = null;
+let selectedStudentId = null;
+
+function showView(id) {
+  ['view-loading','view-error','view-results'].forEach(v => {
+    $(v).style.display = v === id ? '' : 'none';
+  });
+}
+
+function showToast(msg, type='') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  $('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
+
+/* =========================================================
+   LOAD
+   ========================================================= */
+async function loadResults() {
+  if (!token) {
+    showView('view-error');
+    $('error-msg').textContent = 'Geen token opgegeven in de URL.';
+    return;
+  }
+  try {
+    const res = await fetch(`/api/sociograms/${token}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Niet gevonden.');
+    lastData = data;
+    render(data);
+    showView('view-results');
+  } catch(e) {
+    showView('view-error');
+    $('error-msg').textContent = e.message;
+  }
+}
+
+/* =========================================================
+   ANALYSIS  (Coie-Dodge z-score classification)
+   ========================================================= */
+function arrMean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function arrStd(arr, m) {
+  if (arr.length < 2) return 1;
+  const v = arr.reduce((s,x)=>s+(x-m)**2,0) / (arr.length-1);
+  return Math.sqrt(v) || 1;
+}
+
+function analyse(data) {
+  const { sociogram, students, responses, submittedIds } = data;
+  const N = students.length;
+  const sMap = {};
+  students.forEach(s => { sMap[s.id] = s; });
+
+  const posIn={}, negIn={}, posOut={}, negOut={};
+  students.forEach(s => { posIn[s.id]=0; negIn[s.id]=0; posOut[s.id]=0; negOut[s.id]=0; });
+
+  responses.forEach(r => {
+    if (r.choice_type==='positive') { posIn[r.to_student]++; posOut[r.from_student]++; }
+    else                            { negIn[r.to_student]++; negOut[r.from_student]++; }
+  });
+
+  // Reciprocal pairs
+  const posEdgeSet = new Set(responses.filter(r=>r.choice_type==='positive').map(r=>`${r.from_student}-${r.to_student}`));
+  const reciprocalPairs = [];
+  const reciprocalSet = new Set();
+  responses.filter(r=>r.choice_type==='positive').forEach(r => {
+    if (posEdgeSet.has(`${r.to_student}-${r.from_student}`)) {
+      const key = [r.from_student, r.to_student].sort().join('-');
+      if (!reciprocalSet.has(key)) {
+        reciprocalSet.add(key);
+        reciprocalPairs.push({ a: r.from_student, b: r.to_student });
+      }
+    }
+  });
+
+  const submittedSet = new Set(submittedIds);
+  const totalSubmitted = submittedIds.length;
+
+  // Derived sociometric metrics
+  const sp={}, siImpact={}, siScore={};
+  students.forEach(s => {
+    const pos = posIn[s.id]||0, neg = negIn[s.id]||0;
+    sp[s.id]       = pos - neg;                           // Social Preference
+    siImpact[s.id] = pos + neg;                           // Social Impact
+    siScore[s.id]  = N > 1 ? (pos - neg) / (N - 1) : 0;  // Sociometric Index (−1…+1)
+  });
+
+  // Z-scores for Coie-Dodge classification
+  const posVals = students.map(s => posIn[s.id]||0);
+  const negVals = students.map(s => negIn[s.id]||0);
+  const mPos = arrMean(posVals), sdPos = arrStd(posVals, mPos);
+  const mNeg = arrMean(negVals), sdNeg = arrStd(negVals, mNeg);
+
+  const zPos={}, zNeg={};
+  students.forEach(s => {
+    zPos[s.id] = ((posIn[s.id]||0) - mPos) / sdPos;
+    zNeg[s.id] = ((negIn[s.id]||0) - mNeg) / sdNeg;
+  });
+
+  const statusMap = {};
+  students.forEach(s => {
+    const pos = posIn[s.id]||0, neg = negIn[s.id]||0;
+
+    if (totalSubmitted === 0) { statusMap[s.id] = 'Gemiddeld'; return; }
+    if (pos === 0 && neg === 0) { statusMap[s.id] = 'Geïsoleerd'; return; }
+
+    const zp = zPos[s.id], zn = zNeg[s.id];
+    const zsp = zp - zn;   // standardised social preference
+    const zsi = zp + zn;   // standardised social impact
+
+    if (zsp >= 1.0 && zp > 0 && zn <= 0) { statusMap[s.id] = 'Ster'; return; }
+    if (zsp >= 0.5 && zp > 0 && zn <  0) { statusMap[s.id] = 'Populair'; return; }
+    if (zsp <= -1.0 && zn > 0 && zp < 0) { statusMap[s.id] = 'Afgewezen'; return; }
+    if (zsi <= -1.0)                      { statusMap[s.id] = 'Verwaarloosd'; return; }
+    if (zp > 0 && zn > 0 && zsi >= 0.5)  { statusMap[s.id] = 'Controversieel'; return; }
+    statusMap[s.id] = 'Gemiddeld';
+  });
+
+  const recipCount = {};
+  students.forEach(s => { recipCount[s.id]=0; });
+  reciprocalPairs.forEach(p => { recipCount[p.a]++; recipCount[p.b]++; });
+
+  const totalPosPairs = responses.filter(r=>r.choice_type==='positive').length;
+  const reciprocityIndex = totalPosPairs > 0 ? (reciprocalPairs.length*2/totalPosPairs) : 0;
+  const clusters = detectClusters(students, responses);
+
+  return { N, students, sMap, posIn, negIn, posOut, negOut,
+    submittedSet, totalSubmitted, statusMap,
+    reciprocalPairs, recipCount, reciprocityIndex, totalPosPairs, clusters,
+    sp, siImpact, siScore, zPos, zNeg };
+}
+
+function detectClusters(students, responses) {
+  const posEdges = responses.filter(r=>r.choice_type==='positive');
+  if (!posEdges.length) return students.map((s,i)=>({id:i,members:[s.id]}));
+
+  const adj = {};
+  students.forEach(s => { adj[s.id]=new Set(); });
+  posEdges.forEach(r => { adj[r.from_student].add(r.to_student); adj[r.to_student].add(r.from_student); });
+
+  const labels = {};
+  students.forEach(s => { labels[s.id]=s.id; });
+
+  for (let iter=0; iter<20; iter++) {
+    let changed=false;
+    [...students].sort(()=>Math.random()-.5).forEach(s => {
+      const nbrs = [...adj[s.id]];
+      if (!nbrs.length) return;
+      const freq={};
+      nbrs.forEach(n => { const l=labels[n]; freq[l]=(freq[l]||0)+1; });
+      const maxF = Math.max(...Object.values(freq));
+      const best = Object.keys(freq).filter(l=>freq[l]===maxF);
+      const newL = parseInt(best[Math.floor(Math.random()*best.length)]);
+      if (newL!==labels[s.id]) { labels[s.id]=newL; changed=true; }
+    });
+    if (!changed) break;
+  }
+
+  const cm={};
+  students.forEach(s => { const l=labels[s.id]; if(!cm[l]) cm[l]=[]; cm[l].push(s.id); });
+  return Object.values(cm).filter(c=>c.length>0).sort((a,b)=>b.length-a.length).map((m,i)=>({id:i,members:m}));
+}
+
+/* =========================================================
+   STATUS HELPERS
+   ========================================================= */
+const STATUS_COLORS = {
+  Ster: '#f59e0b', Populair: '#10b981', Gemiddeld: '#6366f1',
+  Controversieel: '#f97316', Verwaarloosd: '#94a3b8',
+  Afgewezen: '#f43f5e', Geïsoleerd: '#ef4444'
+};
+const STATUS_ICONS = {
+  Ster: '⭐', Populair: '✅', Gemiddeld: '🔵',
+  Controversieel: '🔥', Verwaarloosd: '👻', Afgewezen: '🔴', Geïsoleerd: '🚨'
+};
+const STATUS_BADGE = {
+  Ster: 'badge-star', Populair: 'badge-success', Gemiddeld: 'badge-primary',
+  Controversieel: 'badge-warning', Verwaarloosd: 'badge-neutral',
+  Afgewezen: 'badge-danger', Geïsoleerd: 'badge-danger'
+};
+
+function statusColor(s)  { return STATUS_COLORS[s]  || '#6366f1'; }
+function statusIcon(s)   { return STATUS_ICONS[s]   || '🔵'; }
+function statusBadge(s)  { return STATUS_BADGE[s]   || 'badge-neutral'; }
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+let cachedAnalysis = null;
+
+function render(data) {
+  const { sociogram, students } = data;
+  cachedAnalysis = analyse(data);
+  const a = cachedAnalysis;
+
+  $('result-title').textContent = sociogram.title;
+  $('result-class').textContent = sociogram.class_name;
+  $('result-meta').textContent  = `${students.length} leerlingen · Code: ${sociogram.token}`;
+
+  $('btn-export').href = `/api/sociograms/${token}/export`;
+  $('header-actions').innerHTML =
+    `<a href="/api/sociograms/${token}/export" class="btn btn-outline btn-sm">↓ CSV</a>
+     <a href="/" class="btn btn-secondary btn-sm">← Dashboard</a>`;
+
+  renderStats(a);
+  renderGraph(data, a);
+  renderRanking(a);
+  renderHeatmap(data);
+  renderClusters(a);
+  renderMetrics(a, sociogram);
+  renderPerStudent(data, a);
+  renderStatus(data, a);
+}
+
+/* ---- Stats ---- */
+function renderStats(a) {
+  const pct     = a.N ? Math.round(a.totalSubmitted/a.N*100) : 0;
+  const stars   = a.students.filter(s=>a.statusMap[s.id]==='Ster').length;
+  const controv = a.students.filter(s=>a.statusMap[s.id]==='Controversieel').length;
+  const isolated= a.students.filter(s=>['Geïsoleerd','Afgewezen'].includes(a.statusMap[s.id])).length;
+  const pairs   = a.reciprocalPairs.length;
+
+  const card = (icon, value, label, accent) => `
+    <div class="stat-card" style="--card-accent:${accent};">
+      <span class="stat-icon">${icon}</span>
+      <span class="stat-value">${value}</span>
+      <span class="stat-label">${label}</span>
+    </div>`;
+
+  $('stats-grid').innerHTML =
+    card('📋', `${a.totalSubmitted}/${a.N}`, `Ingevuld (${pct}%)`,
+      pct===100?'linear-gradient(90deg,#10b981,#059669)':'linear-gradient(90deg,var(--primary),var(--violet))') +
+    card('⭐', stars, 'Sterren', 'linear-gradient(90deg,#f59e0b,#d97706)') +
+    card('🔁', pairs, 'Wederkerige banden', 'linear-gradient(90deg,#06b6d4,#0284c7)') +
+    card('🚨', isolated, 'Aandacht nodig', 'linear-gradient(90deg,#f43f5e,#e11d48)') +
+    card('🔥', controv, 'Controversieel', 'linear-gradient(90deg,#f97316,#ea580c)') +
+    card('📊', `${(a.reciprocityIndex*100).toFixed(0)}%`, 'Wederkerigheidsindex', 'linear-gradient(90deg,#8b5cf6,#7c3aed)');
+}
+
+/* ---- D3 Graph ---- */
+function renderGraph(data, a) {
+  const { students, responses } = data;
+  const { posIn, negIn, statusMap } = a;
+
+  const container = $('graph-container');
+  const W = container.clientWidth || 800;
+  const H = 480;
+
+  d3.select('#graph-svg').selectAll('*').remove();
+
+  const svg = d3.select('#graph-svg').attr('width', W).attr('height', H);
+  const g   = svg.append('g');
+
+  zoomBehavior = d3.zoom().scaleExtent([.15, 5])
+    .on('zoom', e => g.attr('transform', e.transform));
+  svg.call(zoomBehavior);
+  svgRef = svg;
+
+  const defs = svg.append('defs');
+  [['pos','#10b981'],['neg','#f43f5e']].forEach(([id, color]) => {
+    defs.append('marker').attr('id','arrow-'+id)
+      .attr('viewBox','0 -5 10 10').attr('refX',22).attr('refY',0)
+      .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
+      .append('path').attr('d','M0,-5L10,0L0,5').attr('fill',color).attr('opacity',.8);
+  });
+
+  const f = defs.append('filter').attr('id','glow').attr('x','-30%').attr('y','-30%').attr('width','160%').attr('height','160%');
+  f.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
+  const feMerge = f.append('feMerge');
+  feMerge.append('feMergeNode').attr('in','blur');
+  feMerge.append('feMergeNode').attr('in','SourceGraphic');
+
+  function nodeColor(id) { return statusColor(statusMap[id]); }
+  function nodeR(id) { return Math.max(14, Math.min(32, 14 + (posIn[id]||0)*3)); }
+
+  const links = responses
+    .filter(r => currentFilter==='all' || r.choice_type===currentFilter)
+    .map(r => ({ source: r.from_student, target: r.to_student, type: r.choice_type }));
+
+  const nodes = students.map(s => ({ id: s.id, name: s.name }));
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(110).strength(.45))
+    .force('charge', d3.forceManyBody().strength(-320))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide().radius(d=>nodeR(d.id)+10));
+
+  const link = g.append('g').selectAll('line').data(links).enter().append('line')
+    .attr('stroke', d => d.type==='positive' ? '#10b981' : '#f43f5e')
+    .attr('stroke-width', 1.5)
+    .attr('stroke-opacity', .55)
+    .attr('stroke-dasharray', d => d.type==='negative' ? '5 3' : null)
+    .attr('marker-end', d => `url(#arrow-${d.type==='positive'?'pos':'neg'})`);
+
+  const tooltip = $('graph-tooltip');
+  const node = g.append('g').selectAll('g').data(nodes).enter().append('g')
+    .attr('class','node')
+    .style('cursor','pointer')
+    .call(d3.drag()
+      .on('start', (e,d) => { if(!e.active) simulation.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag', (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end', (e,d) => { if(!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }));
+
+  node.append('circle')
+    .attr('r', d => nodeR(d.id))
+    .attr('fill', d => nodeColor(d.id))
+    .attr('stroke', 'rgba(255,255,255,.25)')
+    .attr('stroke-width', 2)
+    .attr('filter', 'url(#glow)')
+    .on('click', (e,d) => { e.stopPropagation(); openStudentModal(d.id); })
+    .on('mouseover', (e,d) => {
+      const pos = posIn[d.id]||0, neg = negIn[d.id]||0;
+      const st = statusMap[d.id];
+      tooltip.innerHTML = `
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:.4rem;">${escHtml(d.name)}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.15rem .75rem;font-size:.82rem;color:rgba(255,255,255,.8);">
+          <span>+ Ontvangen</span><strong style="color:#10b981;">+${pos}</strong>
+          <span>− Ontvangen</span><strong style="color:#f43f5e;">-${neg}</strong>
+          <span>SP</span><strong style="color:${pos-neg>=0?'#10b981':'#f43f5e'}">${pos-neg>=0?'+':''}${pos-neg}</strong>
+          <span>Status</span><strong>${statusIcon(st)} ${st}</strong>
+        </div>
+        <div style="margin-top:.5rem;font-size:.75rem;color:rgba(255,255,255,.5);">Klik voor volledig profiel</div>`;
+      tooltip.style.display = 'block';
+    })
+    .on('mousemove', e => {
+      let x = e.clientX + 14, y = e.clientY - 14;
+      if (x + 260 > window.innerWidth) x = e.clientX - 268;
+      tooltip.style.left = x + 'px';
+      tooltip.style.top  = y + 'px';
+    })
+    .on('mouseout', () => { tooltip.style.display = 'none'; });
+
+  node.append('text')
+    .attr('dy','.35em').attr('text-anchor','middle')
+    .attr('fill','rgba(255,255,255,.92)').attr('font-size', d => Math.min(11,nodeR(d.id)*.7)+'px')
+    .attr('font-weight','600').attr('font-family','Inter,sans-serif')
+    .attr('pointer-events','none')
+    .text(d => d.name.split(' ')[0]);
+
+  simulation.on('tick', () => {
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+        .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+}
+
+$('zoom-in').onclick    = () => svgRef?.transition().call(zoomBehavior.scaleBy, 1.4);
+$('zoom-out').onclick   = () => svgRef?.transition().call(zoomBehavior.scaleBy, .7);
+$('zoom-reset').onclick = () => svgRef?.transition().call(zoomBehavior.transform, d3.zoomIdentity);
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    currentFilter = this.dataset.filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    if (lastData && cachedAnalysis) renderGraph(lastData, cachedAnalysis);
+  });
+});
+
+/* ---- Ranking ---- */
+function renderRanking(a) {
+  const { students, sMap, posIn, negIn, statusMap, reciprocalPairs, recipCount } = a;
+
+  const byPos = [...students].sort((x,y)=>(posIn[y.id]||0)-(posIn[x.id]||0));
+  const byNeg = [...students].sort((x,y)=>(negIn[y.id]||0)-(negIn[x.id]||0));
+
+  function rankItems(list, scoreFn, color) {
+    return list.slice(0,10).map((s,i) => {
+      const score = scoreFn(s.id);
+      if (score===0 && i>0) return '';
+      return `<li class="ranking-item ${i<3?'rank-'+(i+1):''}" style="cursor:pointer;" onclick="openStudentModal(${s.id})">
+        <div class="rank-number">${i+1}</div>
+        <span class="rank-name">${escHtml(s.name)}</span>
+        <span class="badge" style="background:${color}20;color:${color};font-weight:700;">${score}</span>
+      </li>`;
+    }).join('');
+  }
+
+  $('ranking-pos').innerHTML = rankItems(byPos, id=>posIn[id]||0, '#10b981') || '<li class="text-muted" style="padding:.5rem 0;">Geen gegevens</li>';
+  $('ranking-neg').innerHTML = rankItems(byNeg, id=>negIn[id]||0, '#f43f5e') || '<li class="text-muted" style="padding:.5rem 0;">Geen gegevens</li>';
+
+  const stars = students.filter(s=>statusMap[s.id]==='Ster');
+  $('stars-list').innerHTML = stars.length
+    ? stars.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer;" onclick="openStudentModal(${s.id})">
+        <span class="badge badge-star">⭐ Ster</span>
+        <strong>${escHtml(s.name)}</strong>
+        <span class="text-muted">${posIn[s.id]} keuzes</span>
+      </div>`).join('')
+    : '<p class="text-muted">Geen sterren.</p>';
+
+  const controvs = students.filter(s=>statusMap[s.id]==='Controversieel');
+  $('controversial-list').innerHTML = controvs.length
+    ? controvs.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer;" onclick="openStudentModal(${s.id})">
+        <span class="badge" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;">🔥 Controversieel</span>
+        <strong>${escHtml(s.name)}</strong>
+        <span class="text-muted">+${posIn[s.id]} / −${negIn[s.id]}</span>
+      </div>`).join('')
+    : '<p class="text-muted">Geen controversiële leerlingen.</p>';
+
+  $('reciprocal-list').innerHTML = reciprocalPairs.length
+    ? reciprocalPairs.map(p=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
+        <span style="background:#dbeafe;color:#1d4ed8;padding:.15rem .55rem;border-radius:99px;font-size:.78rem;font-weight:700;">↔</span>
+        <strong style="cursor:pointer;" onclick="openStudentModal(${p.a})">${escHtml(sMap[p.a].name)}</strong>
+        <span style="color:var(--text-muted);font-size:.9rem;">&amp;</span>
+        <strong style="cursor:pointer;" onclick="openStudentModal(${p.b})">${escHtml(sMap[p.b].name)}</strong>
+      </div>`).join('')
+    : '<p class="text-muted">Geen wederkerige keuzes.</p>';
+
+  const neglected = students.filter(s=>statusMap[s.id]==='Verwaarloosd');
+  $('neglected-list').innerHTML = neglected.length
+    ? neglected.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;cursor:pointer;" onclick="openStudentModal(${s.id})">
+        <span class="badge badge-neutral">👻</span>
+        <strong>${escHtml(s.name)}</strong>
+      </div>`).join('')
+    : '<p style="color:var(--success);font-weight:600;">✓ Geen verwaarloosde leerlingen.</p>';
+
+  const isolated = students.filter(s=>statusMap[s.id]==='Geïsoleerd');
+  $('isolated-list').innerHTML = isolated.length
+    ? isolated.map(s=>`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;cursor:pointer;" onclick="openStudentModal(${s.id})">
+        <span class="badge badge-danger">🚨</span>
+        <strong>${escHtml(s.name)}</strong>
+      </div>`).join('')
+    : '<p style="color:var(--success);font-weight:600;">✓ Geen geïsoleerde leerlingen.</p>';
+}
+
+/* ---- Heatmap ---- */
+function renderHeatmap(data) {
+  const { students, responses } = data;
+  if (!students.length) { $('heatmap-inner').innerHTML = '<p class="text-muted" style="padding:1rem;">Nog geen gegevens.</p>'; return; }
+
+  const lookup = {};
+  responses.forEach(r => { lookup[`${r.from_student}-${r.to_student}`] = r.choice_type; });
+  const sn = s => s.name.split(' ')[0];
+
+  let html = '<table class="heatmap-table"><thead><tr><th class="row-header">↓ Van / Naar →</th>';
+  students.forEach(s => { html += `<th class="col-header" title="${escHtml(s.name)}">${escHtml(sn(s))}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  students.forEach(from => {
+    html += `<tr><th class="row-header" title="${escHtml(from.name)}">${escHtml(sn(from))}</th>`;
+    students.forEach(to => {
+      if (from.id===to.id) { html += '<td class="cell-self">—</td>'; return; }
+      const v = lookup[`${from.id}-${to.id}`];
+      html += v==='positive' ? `<td class="cell-pos" title="${escHtml(from.name)} → ${escHtml(to.name)}">+</td>`
+            : v==='negative' ? `<td class="cell-neg" title="${escHtml(from.name)} → ${escHtml(to.name)}">−</td>`
+            : '<td></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  $('heatmap-inner').innerHTML = html;
+}
+
+/* ---- Clusters ---- */
+function renderClusters(a) {
+  const { clusters, sMap } = a;
+  const palette = ['#6366f1','#10b981','#f59e0b','#06b6d4','#f43f5e','#8b5cf6','#ec4899','#14b8a6'];
+
+  if (!clusters.length) {
+    $('clusters-list').innerHTML = '<p class="text-muted">Onvoldoende data voor clusteranalyse.</p>';
+    return;
+  }
+
+  $('clusters-list').innerHTML = clusters.map((cl, i) => {
+    const c = palette[i % palette.length];
+    const members = cl.members.map(id => sMap[id]).filter(Boolean);
+    return `<div class="cluster-card" style="border-left-color:${c};">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.35rem;">
+        <strong style="color:${c};">Groep ${i+1}</strong>
+        <span class="badge" style="background:${c}18;color:${c};">${members.length} leerlingen</span>
+      </div>
+      <div class="cluster-members">
+        ${members.map(s=>`<span class="member-chip" style="background:${c}18;color:${c};cursor:pointer;"
+          onclick="openStudentModal(${s.id})">${escHtml(s.name)}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- Metrics ---- */
+function renderMetrics(a, sg) {
+  const { students, posIn, negIn, posOut, statusMap, recipCount, totalSubmitted, N,
+          totalPosPairs, reciprocityIndex, sp, siImpact, siScore } = a;
+  const sorted = [...students].sort((x,y)=>(posIn[y.id]||0)-(posIn[x.id]||0));
+
+  $('metrics-tbody').innerHTML = sorted.map(s => {
+    const pos=posIn[s.id]||0, neg=negIn[s.id]||0, out=posOut[s.id]||0;
+    const spVal = sp[s.id]||0, impact = siImpact[s.id]||0, si = siScore[s.id]||0;
+    const recip = out>0 ? (recipCount[s.id]/out).toFixed(2) : '—';
+    const st = statusMap[s.id];
+    const siColor = si>0?'var(--success)':si<0?'var(--danger)':'inherit';
+    return `<tr style="cursor:pointer;" onclick="openStudentModal(${s.id})">
+      <td><strong>${escHtml(s.name)}</strong></td>
+      <td><span class="badge badge-success">+${pos}</span></td>
+      <td><span class="badge badge-danger">-${neg}</span></td>
+      <td>${out}</td>
+      <td><strong style="color:${spVal>0?'var(--success)':spVal<0?'var(--danger)':'inherit'}">${spVal>0?'+':''}${spVal}</strong></td>
+      <td><strong>${impact}</strong></td>
+      <td><strong style="color:${siColor}">${si>=0?'+':''}${si.toFixed(2)}</strong></td>
+      <td>${recip}</td>
+      <td><span class="badge ${statusBadge(st)}">${statusIcon(st)} ${st}</span></td>
+    </tr>`;
+  }).join('');
+
+  const avgPos = N>0 ? (Object.values(posIn).reduce((s,v)=>s+v,0)/N).toFixed(1) : 0;
+  const avgNeg = N>0 ? (Object.values(negIn).reduce((s,v)=>s+v,0)/N).toFixed(1) : 0;
+  const density = N>1&&totalSubmitted>0 ? (totalPosPairs/(N*(N-1))*100).toFixed(1)+'%' : '—';
+
+  $('group-metrics').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><span class="stat-icon">📈</span><span class="stat-value">${avgPos}</span><span class="stat-label">Gem. + ontvangen</span></div>
+      <div class="stat-card"><span class="stat-icon">📉</span><span class="stat-value">${avgNeg}</span><span class="stat-label">Gem. − ontvangen</span></div>
+      <div class="stat-card"><span class="stat-icon">🕸</span><span class="stat-value">${density}</span><span class="stat-label">Netwerkdichtheid</span></div>
+      <div class="stat-card"><span class="stat-icon">🔁</span><span class="stat-value">${(reciprocityIndex*100).toFixed(0)}%</span><span class="stat-label">Wederkerigheid</span></div>
+    </div>`;
+}
+
+/* ---- Per Leerling ---- */
+function renderPerStudent(data, a) {
+  const { students } = data;
+  const { statusMap } = a;
+
+  $('student-selector').innerHTML = students.map(s => {
+    const c = statusColor(statusMap[s.id]);
+    const active = selectedStudentId===s.id ? ' active' : '';
+    return `<button class="student-sel-btn${active}" onclick="selectStudent(${s.id})">
+      <span class="student-sel-dot" style="background:${c};"></span>
+      ${escHtml(s.name)}
+    </button>`;
+  }).join('');
+
+  if (selectedStudentId && a.sMap[selectedStudentId]) {
+    showStudentProfile(selectedStudentId, data, a);
+  } else {
+    $('student-profile-area').innerHTML = '<p class="text-muted" style="padding:1rem 0;">Kies een leerling hierboven.</p>';
+  }
+}
+
+function selectStudent(id) {
+  selectedStudentId = id;
+  if (lastData && cachedAnalysis) {
+    renderPerStudent(lastData, cachedAnalysis);
+  }
+}
+
+function showStudentProfile(id, data, a) {
+  const { responses } = data;
+  const { sMap, statusMap, posIn, negIn, posOut, negOut, sp, siImpact, siScore, recipCount } = a;
+  const s = sMap[id];
+  if (!s) return;
+  const st = statusMap[id];
+  const c  = statusColor(st);
+
+  const chosenPos   = responses.filter(r=>r.from_student===id && r.choice_type==='positive');
+  const chosenNeg   = responses.filter(r=>r.from_student===id && r.choice_type==='negative');
+  const receivedPos = responses.filter(r=>r.to_student  ===id && r.choice_type==='positive');
+  const receivedNeg = responses.filter(r=>r.to_student  ===id && r.choice_type==='negative');
+
+  const initials = s.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const spVal = sp[id]||0, impact = siImpact[id]||0, si = siScore[id]||0;
+
+  const maxPosIn = Math.max(1, ...Object.values(posIn));
+
+  $('student-profile-area').innerHTML = `
+    <div class="student-profile-card">
+      <div class="student-profile-header">
+        <div class="student-avatar" style="background:${c};">${escHtml(initials)}</div>
+        <div>
+          <div style="font-size:1.2rem;font-weight:800;">${escHtml(s.name)}</div>
+          <span class="badge ${statusBadge(st)}" style="margin-top:.25rem;">${statusIcon(st)} ${st}</span>
+        </div>
+      </div>
+
+      <div class="student-metrics-mini">
+        <div class="mini-metric">
+          <div class="val" style="color:#10b981;">+${posIn[id]||0}</div>
+          <div class="lbl">Positief ontvangen</div>
+        </div>
+        <div class="mini-metric">
+          <div class="val" style="color:#f43f5e;">-${negIn[id]||0}</div>
+          <div class="lbl">Negatief ontvangen</div>
+        </div>
+        <div class="mini-metric">
+          <div class="val" style="color:${spVal>=0?'#10b981':'#f43f5e'};">${spVal>=0?'+':''}${spVal}</div>
+          <div class="lbl">Sociale Voorkeur (SP)</div>
+        </div>
+        <div class="mini-metric">
+          <div class="val" style="color:${si>=0?'#6366f1':'#f43f5e'};">${si>=0?'+':''}${si.toFixed(2)}</div>
+          <div class="lbl">Sociometrisch Index</div>
+        </div>
+      </div>
+
+      <!-- Popularity bar -->
+      <div style="margin-bottom:1.25rem;">
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-muted);margin-bottom:.3rem;">
+          <span>Populariteit in klas</span>
+          <span>${posIn[id]||0} / ${a.N-1} mogelijk</span>
+        </div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill" style="width:${a.N>1?Math.round((posIn[id]||0)/(a.N-1)*100):0}%;background:${c};"></div>
+        </div>
+      </div>
+
+      <div class="choice-columns">
+        <div class="choice-col">
+          <h4 style="color:#10b981;">💚 Positief gekozen door (${receivedPos.length})</h4>
+          ${receivedPos.length
+            ? receivedPos.map(r=>`<span class="choice-pill" style="background:#d1fae5;color:#065f46;cursor:pointer;"
+                onclick="selectStudent(${r.from_student})">
+                ${escHtml(sMap[r.from_student]?.name||'?')}
+              </span>`).join('')
+            : '<span style="color:var(--text-muted);font-size:.85rem;">Niemand</span>'}
+        </div>
+        <div class="choice-col">
+          <h4 style="color:#f43f5e;">🔴 Negatief gekozen door (${receivedNeg.length})</h4>
+          ${receivedNeg.length
+            ? receivedNeg.map(r=>`<span class="choice-pill" style="background:#ffe4e6;color:#be123c;cursor:pointer;"
+                onclick="selectStudent(${r.from_student})">
+                ${escHtml(sMap[r.from_student]?.name||'?')}
+              </span>`).join('')
+            : '<span style="color:var(--text-muted);font-size:.85rem;">Niemand</span>'}
+        </div>
+        <div class="choice-col">
+          <h4 style="color:#6366f1;">↗ Zelf positief gekozen (${chosenPos.length})</h4>
+          ${chosenPos.length
+            ? chosenPos.map(r=>`<span class="choice-pill" style="background:#eef2ff;color:#4338ca;cursor:pointer;"
+                onclick="selectStudent(${r.to_student})">
+                ${escHtml(sMap[r.to_student]?.name||'?')}
+              </span>`).join('')
+            : '<span style="color:var(--text-muted);font-size:.85rem;">Geen keuzes gemaakt</span>'}
+        </div>
+        <div class="choice-col">
+          <h4 style="color:#94a3b8;">↗ Zelf negatief gekozen (${chosenNeg.length})</h4>
+          ${chosenNeg.length
+            ? chosenNeg.map(r=>`<span class="choice-pill" style="background:#f8fafc;color:#475569;cursor:pointer;"
+                onclick="selectStudent(${r.to_student})">
+                ${escHtml(sMap[r.to_student]?.name||'?')}
+              </span>`).join('')
+            : '<span style="color:var(--text-muted);font-size:.85rem;">Geen negatieve keuzes</span>'}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---- Student Modal ---- */
+function openStudentModal(id) {
+  if (!lastData || !cachedAnalysis) return;
+  const { responses } = lastData;
+  const a = cachedAnalysis;
+  const { sMap, statusMap, posIn, negIn, sp, siScore } = a;
+  const s = sMap[id];
+  if (!s) return;
+
+  const st = statusMap[id];
+  const c  = statusColor(st);
+  const initials = s.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+
+  $('modal-avatar').style.background = c;
+  $('modal-avatar').textContent = initials;
+  $('modal-name').textContent = s.name;
+  $('modal-status-badge').innerHTML = `<span class="badge ${statusBadge(st)}" style="margin-top:.2rem;">${statusIcon(st)} ${st}</span>`;
+
+  const chosenPos   = responses.filter(r=>r.from_student===id && r.choice_type==='positive');
+  const chosenNeg   = responses.filter(r=>r.from_student===id && r.choice_type==='negative');
+  const receivedPos = responses.filter(r=>r.to_student  ===id && r.choice_type==='positive');
+  const receivedNeg = responses.filter(r=>r.to_student  ===id && r.choice_type==='negative');
+
+  const spVal = sp[id]||0, si = siScore[id]||0;
+
+  $('modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1.25rem;">
+      <div class="mini-metric">
+        <div class="val" style="color:#10b981;">+${posIn[id]||0}</div>
+        <div class="lbl">+ Ontvangen</div>
+      </div>
+      <div class="mini-metric">
+        <div class="val" style="color:#f43f5e;">-${negIn[id]||0}</div>
+        <div class="lbl">− Ontvangen</div>
+      </div>
+      <div class="mini-metric">
+        <div class="val" style="color:${spVal>=0?'#10b981':'#f43f5e'};">${spVal>=0?'+':''}${spVal}</div>
+        <div class="lbl">SP</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <strong style="font-size:.85rem;color:var(--text-muted);">💚 POSITIEF GEKOZEN DOOR</strong>
+      <div style="margin-top:.5rem;">
+        ${receivedPos.length
+          ? receivedPos.map(r=>`<span class="choice-pill" style="background:#d1fae5;color:#065f46;">${escHtml(sMap[r.from_student]?.name||'?')}</span>`).join('')
+          : '<span style="color:var(--text-muted);font-size:.85rem;">Niemand</span>'}
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <strong style="font-size:.85rem;color:var(--text-muted);">🔴 NEGATIEF GEKOZEN DOOR</strong>
+      <div style="margin-top:.5rem;">
+        ${receivedNeg.length
+          ? receivedNeg.map(r=>`<span class="choice-pill" style="background:#ffe4e6;color:#be123c;">${escHtml(sMap[r.from_student]?.name||'?')}</span>`).join('')
+          : '<span style="color:var(--text-muted);font-size:.85rem;">Niemand</span>'}
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <strong style="font-size:.85rem;color:var(--text-muted);">↗ ZELF POSITIEF GEKOZEN</strong>
+      <div style="margin-top:.5rem;">
+        ${chosenPos.length
+          ? chosenPos.map(r=>`<span class="choice-pill" style="background:#eef2ff;color:#4338ca;">${escHtml(sMap[r.to_student]?.name||'?')}</span>`).join('')
+          : '<span style="color:var(--text-muted);font-size:.85rem;">Geen keuzes gemaakt</span>'}
+      </div>
+    </div>
+
+    ${chosenNeg.length ? `
+    <div>
+      <strong style="font-size:.85rem;color:var(--text-muted);">↗ ZELF NEGATIEF GEKOZEN</strong>
+      <div style="margin-top:.5rem;">
+        ${chosenNeg.map(r=>`<span class="choice-pill" style="background:#f8fafc;color:#475569;">${escHtml(sMap[r.to_student]?.name||'?')}</span>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);">
+      <button class="btn btn-primary btn-sm" onclick="switchToPerStudent(${id})">Volledig profiel bekijken →</button>
+    </div>`;
+
+  $('student-modal').classList.add('open');
+}
+
+function switchToPerStudent(id) {
+  closeModal();
+  selectedStudentId = id;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const btn = document.querySelector('[data-tab="perstudent"]');
+  if (btn) { btn.classList.add('active'); $('tab-perstudent').classList.add('active'); }
+  if (lastData && cachedAnalysis) renderPerStudent(lastData, cachedAnalysis);
+}
+
+function closeModal() { $('student-modal').classList.remove('open'); }
+$('modal-close-btn').onclick = closeModal;
+$('student-modal').addEventListener('click', e => { if (e.target===$('student-modal')) closeModal(); });
+
+/* ---- Status ---- */
+function renderStatus(data, a) {
+  const { students, submissions } = data;
+  const { submittedSet } = a;
+  const subMap={};
+  (submissions||[]).forEach(s => { subMap[s.student_id]=s.submitted_at; });
+
+  const done    = students.filter(s=> submittedSet.has(s.id));
+  const pending = students.filter(s=>!submittedSet.has(s.id));
+
+  $('status-list').innerHTML = `
+    <div class="form-row" style="gap:2rem;align-items:flex-start;">
+      <div>
+        <div class="section-label">
+          <div class="label-icon" style="background:#d1fae5;">✅</div>
+          <h3>Ingevuld (${done.length})</h3>
+        </div>
+        <ul class="ranking-list">
+          ${done.map(s=>`<li class="ranking-item">
+            <span class="badge badge-success" style="width:26px;height:26px;justify-content:center;border-radius:50%;">✓</span>
+            <span class="rank-name">${escHtml(s.name)}</span>
+            <span class="text-small text-muted">${subMap[s.id] ? new Date(subMap[s.id]).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
+          </li>`).join('') || '<li class="text-muted" style="padding:.5rem 0;">Nog niemand ingevuld.</li>'}
+        </ul>
+      </div>
+      <div>
+        <div class="section-label">
+          <div class="label-icon" style="background:#fef3c7;">⏳</div>
+          <h3>Nog niet ingevuld (${pending.length})</h3>
+        </div>
+        <ul class="ranking-list">
+          ${pending.map(s=>`<li class="ranking-item" style="opacity:.6;">
+            <span class="badge badge-neutral" style="width:26px;height:26px;justify-content:center;border-radius:50%;">○</span>
+            <span class="rank-name">${escHtml(s.name)}</span>
+          </li>`).join('') || '<li style="padding:.65rem 0;color:var(--success);font-weight:700;display:flex;align-items:center;gap:.5rem;">🎉 Iedereen heeft ingevuld!</li>'}
+        </ul>
+      </div>
+    </div>`;
+}
+
+/* ---- Tabs ---- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    this.classList.add('active');
+    $('tab-'+this.dataset.tab).classList.add('active');
+    if (this.dataset.tab==='graph' && lastData && cachedAnalysis) renderGraph(lastData, cachedAnalysis);
+  });
+});
+
+/* ---- Refresh ---- */
+async function refreshData(silent) {
+  try {
+    const res  = await fetch(`/api/sociograms/${token}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    lastData = data;
+    render(data);
+    if (!silent) showToast('Bijgewerkt!', 'success');
+  } catch(e) { if (!silent) showToast('Vernieuwen mislukt.', 'error'); }
+}
+
+$('btn-refresh').addEventListener('click', () => refreshData(false));
+
+/* ---- Real-time SSE ---- */
+let sseRetry = 1000;
+function connectSSE() {
+  if (!token) return;
+  const es = new EventSource(`/api/sociograms/${token}/events`);
+  es.onmessage = () => refreshData(true);
+  es.onerror = () => {
+    es.close();
+    setTimeout(() => { sseRetry = Math.min(sseRetry * 2, 30000); connectSSE(); }, sseRetry);
+  };
+  es.onopen = () => { sseRetry = 1000; };
+}
+
+window.addEventListener('resize', () => {
+  if (lastData && cachedAnalysis && $('tab-graph').classList.contains('active')) renderGraph(lastData, cachedAnalysis);
+});
+
+loadResults().then(() => connectSSE());
+</script>
+</body>
+</html>

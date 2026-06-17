@@ -1,0 +1,14 @@
+{
+  "name": "sociogram",
+  "version": "1.0.0",
+  "description": "Sociogram webapplicatie voor scholen",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sql.js": "^1.14.1"
+  }
+}
