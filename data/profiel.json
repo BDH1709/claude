@@ -1,0 +1,30 @@
+{
+  "naam": "Bas",
+  "opleiding": "PABO",
+  "voorkeursgroepen": [5, 6, 7],
+  "regio": "Zuid-Holland",
+  "standplaats_referentie": "Zoetermeer",
+  "max_reistijd_minuten": 30,
+  "ov_belangrijk": true,
+  "contract_voorkeur": "vast",
+  "dienstverband_voorkeur": "fulltime",
+  "begeleiding_belangrijk": true,
+  "schoolgrootte_voorkeur": ["middelgroot", "groot"],
+  "parallelgroepen_gewenst": true,
+  "onderzoekend_leren_gewenst": true,
+  "steam_innovatie_gewenst": true,
+  "gewichten": {
+    "groep_match": 14,
+    "regio_reistijd": 12,
+    "ov_bereikbaarheid": 8,
+    "contract_vast": 14,
+    "dienstverband_fulltime": 8,
+    "begeleiding": 14,
+    "schoolgrootte": 6,
+    "parallelgroepen": 6,
+    "onderzoekend_leren": 10,
+    "steam_innovatie": 10,
+    "vacaturetekst_kwaliteit": 4
+  },
+  "toelichting": "Deze gewichten bepalen hoe zwaar elk criterium meetelt in de matchscore (totaal 106 punten, genormaliseerd naar 0-100). Pas ze aan in dit bestand als jouw voorkeuren veranderen — de code hoeft niet aangepast te worden."
+}

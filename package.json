@@ -1,0 +1,13 @@
+{
+  "name": "bas-vacaturetool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Persoonlijke vacaturetool voor het basisonderwijs (statische frontend + feed-importscript).",
+  "scripts": {
+    "import-feeds": "node scripts/import-feeds.js",
+    "import-feeds:dry-run": "node scripts/import-feeds.js --dry-run"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
