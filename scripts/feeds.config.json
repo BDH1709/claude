@@ -1,0 +1,31 @@
+{
+  "_uitleg": "Configuratie van vacaturebronnen voor scripts/import-feeds.js. Elke bron heeft een 'type' (rss, json, csv), een 'url' of lokaal 'pad', en 'ingeschakeld' true/false. Voeg hier later echte bronnen toe; de app blijft generiek en hangt niet vast aan één platform.",
+  "bronnen": [
+    {
+      "id": "voorbeeld-rss",
+      "type": "rss",
+      "ingeschakeld": false,
+      "url": "https://www.voorbeeld-vacaturebank.nl/vacatures/basisonderwijs.xml",
+      "regio_filter": "Zuid-Holland"
+    },
+    {
+      "id": "voorbeeld-json-api",
+      "type": "json",
+      "ingeschakeld": false,
+      "url": "https://api.voorbeeld-onderwijsbank.nl/v1/vacatures?regio=zuid-holland",
+      "veldmapping": {
+        "id": "vacatureId",
+        "schoolnaam": "school.naam",
+        "plaats": "school.plaats",
+        "functietitel": "titel",
+        "url": "link"
+      }
+    },
+    {
+      "id": "handmatige-csv-import",
+      "type": "csv",
+      "ingeschakeld": false,
+      "pad": "scripts/invoer/handmatig.csv"
+    }
+  ]
+}

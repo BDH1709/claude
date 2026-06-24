@@ -1,0 +1,13 @@
+services:
+  vacaturetool:
+    build: .
+    image: bas-vacaturetool:latest
+    container_name: bas-vacaturetool
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      # Mount data/ als losse volume zodat scripts/import-feeds.js (buiten de
+      # container, bv. via cron op de Pi) nieuwe data kan wegschrijven zonder
+      # dat de image opnieuw gebouwd moet worden.
+      - ./data:/usr/share/nginx/html/data:ro

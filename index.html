@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vacaturetool · Bas</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="profielkop">
+  <div class="profielkop__inner">
+    <div class="profielkop__titel">
+      <h1>Vacatures basisonderwijs</h1>
+      <p class="profielkop__subtitel">Persoonlijke zoek- en beoordelingstool van Bas</p>
+    </div>
+    <button id="btn-profiel-toggle" class="knop knop--subtiel" aria-expanded="false">
+      Mijn voorkeuren
+    </button>
+  </div>
+  <div id="profiel-chips" class="profiel-chips profiel-chips--verborgen">
+    <span class="chip">Groep 5, 6 of 7</span>
+    <span class="chip">Zuid-Holland</span>
+    <span class="chip">±30 min rond Zoetermeer</span>
+    <span class="chip">Goede OV-bereikbaarheid</span>
+    <span class="chip">Vaste baan gewenst</span>
+    <span class="chip">Fulltime gewenst</span>
+    <span class="chip">Goede begeleiding belangrijk</span>
+    <span class="chip">Middelgrote / grotere school</span>
+    <span class="chip">Parallelgroepen / dubbele klassen</span>
+    <span class="chip">Ruimte voor onderzoekend leren</span>
+    <span class="chip">Ruimte voor STEAM & innovatie</span>
+  </div>
+</header>
+
+<nav class="tabbalk" aria-label="Onderdelen">
+  <button class="tab actief" data-view="overzicht">Overzicht</button>
+  <button class="tab" data-view="vergelijken">Vergelijken <span id="vergelijk-teller" class="badge-teller">0</span></button>
+  <button class="tab" data-view="sollicitatiehulp">Sollicitatiehulp</button>
+</nav>
+
+<main>
+
+  <!-- VIEW: OVERZICHT -->
+  <section id="view-overzicht" class="view view--actief">
+
+    <section class="toplijst">
+      <h2>Jouw top-matches</h2>
+      <div id="toplijst-grid" class="toplijst-grid"></div>
+    </section>
+
+    <section class="filters" aria-label="Filters">
+      <h2>Filters</h2>
+      <div class="filters-grid">
+        <label class="filter-veld">
+          Groep
+          <select id="filter-groep">
+            <option value="">Alle groepen</option>
+            <option value="5">Groep 5</option>
+            <option value="6">Groep 6</option>
+            <option value="7">Groep 7</option>
+          </select>
+        </label>
+
+        <label class="filter-veld">
+          Max. reistijd (minuten)
+          <select id="filter-reistijd">
+            <option value="">Geen maximum</option>
+            <option value="15">≤ 15 min</option>
+            <option value="30">≤ 30 min</option>
+            <option value="45">≤ 45 min</option>
+          </select>
+        </label>
+
+        <label class="filter-veld">
+          Min. OV-bereikbaarheid
+          <select id="filter-ov">
+            <option value="">Geen minimum</option>
+            <option value="3">3/5 of hoger</option>
+            <option value="4">4/5 of hoger</option>
+          </select>
+        </label>
+
+        <label class="filter-veld">
+          Dienstverband
+          <select id="filter-dienstverband">
+            <option value="">Alles</option>
+            <option value="fulltime">Fulltime (≥1,0 fte)</option>
+            <option value="parttime">Parttime</option>
+          </select>
+        </label>
+
+        <label class="filter-veld">
+          Aanstelling
+          <select id="filter-contract">
+            <option value="">Alles</option>
+            <option value="vast">Vast</option>
+            <option value="tijdelijk">Tijdelijk</option>
+          </select>
+        </label>
+
+        <label class="filter-veld">
+          Schoolgrootte
+          <select id="filter-grootte">
+            <option value="">Alles</option>
+            <option value="klein">Klein</option>
+            <option value="middelgroot">Middelgroot</option>
+            <option value="groot">Groot</option>
+          </select>
+        </label>
+
+        <label class="filter-veld filter-veld--checkbox">
+          <input type="checkbox" id="filter-begeleiding" />
+          Sterke begeleiding
+        </label>
+
+        <label class="filter-veld filter-veld--checkbox">
+          <input type="checkbox" id="filter-onderzoekend" />
+          Onderzoekend leren
+        </label>
+
+        <label class="filter-veld filter-veld--checkbox">
+          <input type="checkbox" id="filter-steam" />
+          STEAM / innovatie
+        </label>
+
+        <label class="filter-veld filter-veld--checkbox">
+          <input type="checkbox" id="filter-parallel" />
+          Parallelgroepen
+        </label>
+
+        <label class="filter-veld">
+          Minimale matchscore
+          <div class="filter-slider">
+            <input type="range" id="filter-score" min="0" max="100" value="0" step="5" />
+            <span id="filter-score-waarde">0</span>
+          </div>
+        </label>
+
+        <button id="btn-reset-filters" class="knop knop--subtiel">Filters wissen</button>
+      </div>
+    </section>
+
+    <section class="resultaten">
+      <div class="resultaten__kop">
+        <h2>Vacatures</h2>
+        <span id="resultaten-aantal" class="resultaten__aantal"></span>
+      </div>
+      <div id="vacatures-grid" class="vacatures-grid"></div>
+      <p id="geen-resultaten" class="geen-resultaten geen-resultaten--verborgen">
+        Geen vacatures gevonden met deze filters. Probeer een filter te verruimen.
+      </p>
+    </section>
+
+  </section>
+
+  <!-- VIEW: VERGELIJKEN -->
+  <section id="view-vergelijken" class="view">
+    <div class="vergelijken-kop">
+      <h2>Vacatures vergelijken</h2>
+      <button id="btn-leeg-vergelijklijst" class="knop knop--subtiel">Vergelijklijst leegmaken</button>
+    </div>
+    <p id="vergelijken-leeg" class="geen-resultaten">
+      Selecteer op het overzicht maximaal 4 vacatures om hier naast elkaar te vergelijken.
+    </p>
+    <div class="vergelijken-tabel-wrapper">
+      <table id="vergelijken-tabel" class="vergelijken-tabel"></table>
+    </div>
+  </section>
+
+  <!-- VIEW: SOLLICITATIEHULP -->
+  <section id="view-sollicitatiehulp" class="view">
+    <h2>Sollicitatie- en gespreksvragen</h2>
+    <p class="sectie-intro">
+      Vragen om mee te nemen naar een sollicitatiegesprek of meeloopdag, gegroepeerd per thema dat voor jou belangrijk is.
+    </p>
+    <div id="sollicitatiehulp-grid" class="sollicitatiehulp-grid"></div>
+  </section>
+
+</main>
+
+<!-- DETAILMODAL -->
+<div id="modal-detail" class="modal-overlay modal-overlay--verborgen">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-detail-titel">
+    <button id="btn-modal-sluiten" class="modal__sluiten" aria-label="Sluiten">×</button>
+    <div id="modal-detail-inhoud"></div>
+  </div>
+</div>
+
+<script src="js/matchscore.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
