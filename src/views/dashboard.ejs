@@ -1,0 +1,98 @@
+<%- include('partials/header', { title }) %>
+
+<div class="pagina-kop">
+  <h1>Dashboard</h1>
+  <p class="pagina-sub"><%= datumLabel %> · week <%= weekNummer %></p>
+</div>
+
+<section class="kaart" aria-labelledby="dagplanning-kop">
+  <div class="kaart-kop">
+    <h2 id="dagplanning-kop">Dagplanning vandaag</h2>
+    <a class="knop knop-klein" href="/dag/<%= datumVandaag %>">Bewerken</a>
+  </div>
+  <% if (dagItems.length === 0) { %>
+    <p class="leeg">Nog geen dagplanning voor vandaag. <a href="/dag/<%= datumVandaag %>">Vul deze aan</a> of stel eerst een <a href="/weekrooster">weekrooster-sjabloon</a> in.</p>
+  <% } else { %>
+    <ul class="dagplanning-lijst">
+      <% dagItems.forEach(item => { %>
+        <li class="dagplanning-item">
+          <span class="tijd"><%= item.starttijd %>–<%= item.eindtijd %></span>
+          <%- include('partials/vak-badge', { vak: item.vak, VAKKEN }) %>
+          <span class="lesdoel"><%= item.lesdoel || '' %></span>
+          <% if (item.notitie) { %><span class="item-notitie"><%= item.notitie %></span><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<section class="kaart" aria-labelledby="todos-kop">
+  <div class="kaart-kop">
+    <h2 id="todos-kop">Openstaande acties (<%= aantalOpenTodos %>)</h2>
+    <a class="knop knop-klein" href="/todos">Alle to-do's</a>
+  </div>
+  <% if (openTodos.length === 0) { %>
+    <p class="leeg">Geen openstaande acties. 🎉</p>
+  <% } else { %>
+    <ul class="todo-lijst">
+      <% openTodos.forEach(todo => { %>
+        <li class="todo-item">
+          <form action="/todos/<%= todo.id %>/afronden" method="POST" class="todo-vink-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="todo-vink" aria-label="Markeer als afgerond">☐</button>
+          </form>
+          <span class="todo-titel"><%= todo.titel %></span>
+          <% if (todo.roepnaam) { %><span class="todo-leerling"><%= todo.roepnaam %></span><% } %>
+          <% if (todo.deadline) { %><span class="todo-deadline"><%= todo.deadline %></span><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<section class="kaart" aria-labelledby="aandacht-kop">
+  <div class="kaart-kop">
+    <h2 id="aandacht-kop">Aandachtspunten per leerling</h2>
+  </div>
+  <% if (aandachtsKaarten.length === 0) { %>
+    <p class="leeg">Geen openstaande aandachtspunten.</p>
+  <% } else { %>
+    <div class="aandacht-grid">
+      <% aandachtsKaarten.forEach(({ leerling, aandachtspunten, laatsteNotitie }) => { %>
+        <a class="aandacht-kaartje" href="/leerlingen/<%= leerling.id %>">
+          <h3><%= leerling.roepnaam %></h3>
+          <ul class="aandacht-punten">
+            <% aandachtspunten.forEach(p => { %>
+              <li><%= p.tekst %></li>
+            <% }) %>
+          </ul>
+          <% if (laatsteNotitie) { %>
+            <p class="aandacht-recent">Laatste notitie (<%= laatsteNotitie.datum %>): <%= laatsteNotitie.tekst %></p>
+          <% } %>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<section class="kaart" aria-labelledby="week-kop">
+  <div class="kaart-kop">
+    <h2 id="week-kop">Weekoverzicht</h2>
+    <a class="knop knop-klein" href="/week">Volledig weekoverzicht</a>
+  </div>
+  <div class="week-compact">
+    <% week.forEach(dag => { %>
+      <a class="week-compact-dag <%= dag.isVandaag ? 'vandaag' : '' %>" href="/dag/<%= dag.datum %>">
+        <span class="week-compact-naam"><%= dag.naam %></span>
+        <span class="week-compact-aantal"><%= dag.items.length %> blokken</span>
+        <div class="week-compact-vakken">
+          <% dag.items.slice(0, 6).forEach(item => { %>
+            <span class="vak-stip" style="--vak-kleur: <%= VAKKEN[item.vak].kleur %>" title="<%= VAKKEN[item.vak].kort %>"></span>
+          <% }) %>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

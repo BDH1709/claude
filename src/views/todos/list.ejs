@@ -1,0 +1,74 @@
+<%- include('../partials/header', { title }) %>
+
+<div class="pagina-kop">
+  <h1>To-do's</h1>
+</div>
+
+<section class="kaart">
+  <h2>Nieuwe actie</h2>
+  <form action="/todos" method="POST" class="formulier formulier-inline">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="titel" class="sr-only">Titel</label>
+    <input type="text" id="titel" name="titel" placeholder="Wat moet er gebeuren?" required>
+
+    <label for="leerling_id" class="sr-only">Leerling</label>
+    <select id="leerling_id" name="leerling_id">
+      <option value="">— geen leerling —</option>
+      <% leerlingen.forEach(l => { %>
+        <option value="<%= l.id %>"><%= l.roepnaam %></option>
+      <% }) %>
+    </select>
+
+    <label for="deadline" class="sr-only">Deadline</label>
+    <input type="date" id="deadline" name="deadline">
+
+    <button type="submit" class="knop knop-primair">Toevoegen</button>
+  </form>
+</section>
+
+<section class="kaart">
+  <h2>Open (<%= open.length %>)</h2>
+  <% if (open.length === 0) { %>
+    <p class="leeg">Geen openstaande acties.</p>
+  <% } else { %>
+    <ul class="todo-lijst">
+      <% open.forEach(todo => { %>
+        <li class="todo-item">
+          <form action="/todos/<%= todo.id %>/afronden" method="POST" class="todo-vink-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="todo-vink" aria-label="Markeer als afgerond">☐</button>
+          </form>
+          <span class="todo-titel"><%= todo.titel %></span>
+          <% if (todo.roepnaam) { %><a class="todo-leerling" href="/leerlingen/<%= todo.leerling_id %>"><%= todo.roepnaam %></a><% } %>
+          <% if (todo.deadline) { %><span class="todo-deadline"><%= todo.deadline %></span><% } %>
+          <form action="/todos/<%= todo.id %>/verwijderen" method="POST" class="inline-form" data-bevestig="Actie verwijderen?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="link-knop link-knop-gevaar">Verwijderen</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<section class="kaart">
+  <h2>Onlangs afgerond</h2>
+  <% if (afgerond.length === 0) { %>
+    <p class="leeg">Nog niets afgerond.</p>
+  <% } else { %>
+    <ul class="todo-lijst todo-lijst-afgerond">
+      <% afgerond.forEach(todo => { %>
+        <li class="todo-item todo-item-afgerond">
+          <form action="/todos/<%= todo.id %>/afronden" method="POST" class="todo-vink-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="todo-vink" aria-label="Heropenen">☑</button>
+          </form>
+          <span class="todo-titel"><%= todo.titel %></span>
+          <% if (todo.roepnaam) { %><span class="todo-leerling"><%= todo.roepnaam %></span><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/footer') %>

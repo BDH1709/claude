@@ -1,0 +1,21 @@
+<%- include('partials/header', { title }) %>
+<div class="login-scherm">
+  <div class="login-kaart">
+    <h1>Onderwijshub</h1>
+    <p class="login-sub">Groep 7 · OBS Groenehoek</p>
+    <% if (fout) { %>
+      <p class="melding melding-fout"><%= fout %></p>
+    <% } %>
+    <form action="/login" method="POST" class="formulier">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label for="gebruikersnaam">Gebruikersnaam</label>
+      <input type="text" id="gebruikersnaam" name="gebruikersnaam" autocomplete="username" required autofocus>
+
+      <label for="wachtwoord">Wachtwoord</label>
+      <input type="password" id="wachtwoord" name="wachtwoord" autocomplete="current-password" required>
+
+      <button type="submit" class="knop knop-primair">Inloggen</button>
+    </form>
+  </div>
+</div>
+<%- include('partials/footer') %>

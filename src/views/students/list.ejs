@@ -1,0 +1,57 @@
+<%- include('../partials/header', { title }) %>
+
+<div class="pagina-kop">
+  <h1>Leerlingen</h1>
+  <a class="knop knop-primair" href="/leerlingen/nieuw">+ Nieuwe leerling</a>
+</div>
+
+<div class="tabs">
+  <a class="tab <%= !toonGearchiveerd ? 'actief' : '' %>" href="/leerlingen">Actief</a>
+  <a class="tab <%= toonGearchiveerd ? 'actief' : '' %>" href="/leerlingen?gearchiveerd=1">Gearchiveerd</a>
+</div>
+
+<% if (leerlingen.length === 0) { %>
+  <p class="leeg"><%= toonGearchiveerd ? 'Geen gearchiveerde leerlingen.' : 'Nog geen leerlingen toegevoegd.' %></p>
+<% } else { %>
+  <table class="tabel">
+    <thead>
+      <tr>
+        <th>Roepnaam</th>
+        <th>Groep</th>
+        <th>Pluspunt</th>
+        <th>Staal</th>
+        <th>Blink</th>
+        <th>Verjaardag</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% leerlingen.forEach(l => { %>
+        <tr>
+          <td><a href="/leerlingen/<%= l.id %>"><%= l.roepnaam %></a></td>
+          <td><%= l.groep %></td>
+          <td><%= l.niveau_rekenen ? NIVEAUS[l.niveau_rekenen].label : '—' %></td>
+          <td><%= l.niveau_taal ? NIVEAUS[l.niveau_taal].label : '—' %></td>
+          <td><%= l.niveau_wereldorientatie ? NIVEAUS[l.niveau_wereldorientatie].label : '—' %></td>
+          <td><%= l.verjaardag_dag ? `${l.verjaardag_dag}/${l.verjaardag_maand}` : '—' %></td>
+          <td class="tabel-acties">
+            <a href="/leerlingen/<%= l.id %>/bewerken">Bewerken</a>
+            <% if (toonGearchiveerd) { %>
+              <form action="/leerlingen/<%= l.id %>/dearchiveren" method="POST" class="inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="link-knop">Terugzetten</button>
+              </form>
+            <% } else { %>
+              <form action="/leerlingen/<%= l.id %>/archiveren" method="POST" class="inline-form" data-bevestig="Leerling archiveren?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="link-knop">Archiveren</button>
+              </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('../partials/footer') %>

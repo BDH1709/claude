@@ -1,0 +1,61 @@
+<%- include('../partials/header', { title }) %>
+
+<div class="pagina-kop">
+  <h1>Dagplanning <%= isVandaag ? '(vandaag)' : '' %></h1>
+  <p class="pagina-sub"><%= datumLabel %></p>
+</div>
+
+<div class="dag-navigatie">
+  <a href="/dag/<%= vorigeDag %>">&larr; Vorige dag</a>
+  <a href="/dag/<%= volgendeDag %>">Volgende dag &rarr;</a>
+</div>
+
+<% if (fout) { %>
+  <p class="melding melding-fout"><%= fout %></p>
+<% } %>
+
+<% if (weekendDag) { %>
+  <p class="melding">Dit is een weekenddag; er wordt niets automatisch vanuit het weekrooster gevuld. Handmatig toevoegen kan wel.</p>
+<% } %>
+
+<section class="kaart">
+  <ul class="dagplanning-lijst dagplanning-lijst-bewerkbaar">
+    <% items.forEach(item => { %>
+      <li class="dagplanning-item" data-item-id="<%= item.id %>">
+        <form action="/dag/item/<%= item.id %>/bewerken" method="POST" class="rooster-item-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="time" name="starttijd" value="<%= item.starttijd %>" required>
+          <input type="time" name="eindtijd" value="<%= item.eindtijd %>" required>
+          <select name="vak" required>
+            <% Object.entries(VAKKEN).forEach(([waarde, info]) => { %>
+              <option value="<%= waarde %>" <%= item.vak === waarde ? 'selected' : '' %>><%= info.kort %></option>
+            <% }) %>
+          </select>
+          <input type="text" name="lesdoel" value="<%= item.lesdoel || '' %>" placeholder="Lesdoel">
+          <input type="text" name="notitie" value="<%= item.notitie || '' %>" placeholder="Notitie">
+          <button type="submit" class="knop knop-klein">Opslaan</button>
+        </form>
+        <form action="/dag/item/<%= item.id %>/verwijderen" method="POST" class="inline-form" data-bevestig="Dit blok verwijderen?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="link-knop link-knop-gevaar">Verwijderen</button>
+        </form>
+      </li>
+    <% }) %>
+  </ul>
+
+  <form action="/dag/<%= datum %>/item" method="POST" class="rooster-item-form rooster-item-nieuw">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="time" name="starttijd" required>
+    <input type="time" name="eindtijd" required>
+    <select name="vak" required>
+      <% Object.entries(VAKKEN).forEach(([waarde, info]) => { %>
+        <option value="<%= waarde %>"><%= info.kort %></option>
+      <% }) %>
+    </select>
+    <input type="text" name="lesdoel" placeholder="Lesdoel">
+    <input type="text" name="notitie" placeholder="Notitie">
+    <button type="submit" class="knop knop-klein knop-primair">+ Blok toevoegen</button>
+  </form>
+</section>
+
+<%- include('../partials/footer') %>

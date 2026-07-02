@@ -1,0 +1,18 @@
+# Voorbeeldconfiguratie voor Caddy als reverse proxy met automatische HTTPS
+# (Let's Encrypt). Kopieer naar /etc/caddy/Caddyfile op je server en pas het
+# domein aan. Caddy vraagt en vernieuwt het certificaat volledig automatisch.
+#
+# Vereist: poort 80 en 443 bereikbaar vanaf internet (alleen nodig als je
+# NIET via VPN werkt, zie README voor de afweging).
+
+onderwijshub.jouwdomein.nl {
+    reverse_proxy 127.0.0.1:3000
+
+    encode gzip
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "same-origin"
+    }
+}

@@ -1,0 +1,37 @@
+<%- include('../partials/header', { title }) %>
+
+<div class="pagina-kop">
+  <h1>Weekoverzicht</h1>
+  <p class="pagina-sub">Week <%= weekNummer %></p>
+</div>
+
+<div class="dag-navigatie">
+  <a href="/week/<%= vorigeWeek %>">&larr; Vorige week</a>
+  <a href="/week/<%= volgendeWeek %>">Volgende week &rarr;</a>
+</div>
+
+<div class="week-grid">
+  <% dagen.forEach(dag => { %>
+    <section class="kaart week-dag-kaart <%= dag.isVandaag ? 'vandaag' : '' %>">
+      <div class="kaart-kop">
+        <h2><%= dag.naam %></h2>
+        <a class="knop knop-klein" href="/dag/<%= dag.datum %>">Bewerken</a>
+      </div>
+      <% if (dag.items.length === 0) { %>
+        <p class="leeg">Geen items.</p>
+      <% } else { %>
+        <ul class="dagplanning-lijst dagplanning-lijst-compact">
+          <% dag.items.forEach(item => { %>
+            <li class="dagplanning-item">
+              <span class="tijd"><%= item.starttijd %></span>
+              <%- include('../partials/vak-badge', { vak: item.vak, VAKKEN }) %>
+              <span class="lesdoel"><%= item.lesdoel || '' %></span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  <% }) %>
+</div>
+
+<%- include('../partials/footer') %>

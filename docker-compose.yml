@@ -1,0 +1,24 @@
+services:
+  onderwijshub:
+    build: .
+    container_name: onderwijshub
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+    volumes:
+      - ./data:/app/data
+    # Standaard alleen bereikbaar op het Docker-netwerk / localhost van de Pi.
+    # Ontsluit naar buiten via een reverse proxy (zie README), niet door deze
+    # poort direct naar internet te forwarden.
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/login', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
