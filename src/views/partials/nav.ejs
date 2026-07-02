@@ -1,0 +1,17 @@
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/">Onderwijshub <span class="brand-sub">groep 7 · OBS Groenehoek</span></a>
+    <button class="nav-toggle" type="button" aria-controls="hoofdnav" aria-expanded="false">Menu</button>
+    <nav id="hoofdnav" class="hoofdnav">
+      <a href="/" class="<%= huidigPad === '/' ? 'actief' : '' %>">Dashboard</a>
+      <a href="/leerlingen" class="<%= huidigPad.startsWith('/leerlingen') ? 'actief' : '' %>">Leerlingen</a>
+      <a href="/week" class="<%= huidigPad.startsWith('/week') || huidigPad.startsWith('/dag') ? 'actief' : '' %>">Weekoverzicht</a>
+      <a href="/weekrooster" class="<%= huidigPad.startsWith('/weekrooster') ? 'actief' : '' %>">Weekrooster-sjabloon</a>
+      <a href="/todos" class="<%= huidigPad.startsWith('/todos') ? 'actief' : '' %>">To-do's</a>
+      <form action="/logout" method="POST" class="uitloggen-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="link-knop">Uitloggen</button>
+      </form>
+    </nav>
+  </div>
+</header>

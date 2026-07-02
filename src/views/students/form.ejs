@@ -1,0 +1,62 @@
+<%- include('../partials/header', { title }) %>
+
+<div class="pagina-kop">
+  <h1><%= title %></h1>
+</div>
+
+<% if (fout) { %>
+  <p class="melding melding-fout"><%= fout %></p>
+<% } %>
+
+<form action="<%= leerling && leerling.id ? `/leerlingen/${leerling.id}/bewerken` : '/leerlingen/nieuw' %>" method="POST" class="formulier formulier-breed">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <label for="roepnaam">Roepnaam *</label>
+  <input type="text" id="roepnaam" name="roepnaam" value="<%= leerling ? leerling.roepnaam : '' %>" required autofocus>
+
+  <label for="groep">Groep</label>
+  <input type="text" id="groep" name="groep" value="<%= leerling ? leerling.groep : '7' %>">
+
+  <fieldset class="niveau-fieldset">
+    <legend>Niveau-indicatie per vak (optioneel)</legend>
+
+    <label for="niveau_rekenen">Pluspunt (rekenen)</label>
+    <select id="niveau_rekenen" name="niveau_rekenen">
+      <option value="">— geen indicatie —</option>
+      <% Object.entries(NIVEAUS).forEach(([waarde, info]) => { %>
+        <option value="<%= waarde %>" <%= leerling && leerling.niveau_rekenen === waarde ? 'selected' : '' %>><%= info.label %></option>
+      <% }) %>
+    </select>
+
+    <label for="niveau_taal">Staal (taal/spelling)</label>
+    <select id="niveau_taal" name="niveau_taal">
+      <option value="">— geen indicatie —</option>
+      <% Object.entries(NIVEAUS).forEach(([waarde, info]) => { %>
+        <option value="<%= waarde %>" <%= leerling && leerling.niveau_taal === waarde ? 'selected' : '' %>><%= info.label %></option>
+      <% }) %>
+    </select>
+
+    <label for="niveau_wereldorientatie">Blink (wereldoriëntatie)</label>
+    <select id="niveau_wereldorientatie" name="niveau_wereldorientatie">
+      <option value="">— geen indicatie —</option>
+      <% Object.entries(NIVEAUS).forEach(([waarde, info]) => { %>
+        <option value="<%= waarde %>" <%= leerling && leerling.niveau_wereldorientatie === waarde ? 'selected' : '' %>><%= info.label %></option>
+      <% }) %>
+    </select>
+  </fieldset>
+
+  <fieldset class="verjaardag-fieldset">
+    <legend>Verjaardag (alleen dag en maand, voor de kalender)</legend>
+    <label for="verjaardag_dag">Dag</label>
+    <input type="number" id="verjaardag_dag" name="verjaardag_dag" min="1" max="31" value="<%= leerling && leerling.verjaardag_dag ? leerling.verjaardag_dag : '' %>">
+    <label for="verjaardag_maand">Maand</label>
+    <input type="number" id="verjaardag_maand" name="verjaardag_maand" min="1" max="12" value="<%= leerling && leerling.verjaardag_maand ? leerling.verjaardag_maand : '' %>">
+  </fieldset>
+
+  <div class="formulier-acties">
+    <button type="submit" class="knop knop-primair">Opslaan</button>
+    <a class="knop" href="<%= leerling && leerling.id ? `/leerlingen/${leerling.id}` : '/leerlingen' %>">Annuleren</a>
+  </div>
+</form>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,69 @@
+<%- include('../partials/header', { title }) %>
+
+<div class="pagina-kop">
+  <h1><%= leerling.roepnaam %> <span class="pagina-sub">groep <%= leerling.groep %></span></h1>
+  <div class="pagina-kop-acties">
+    <a class="knop" href="/leerlingen/<%= leerling.id %>/bewerken">Bewerken</a>
+  </div>
+</div>
+
+<section class="kaart">
+  <h2>Niveau-indicaties</h2>
+  <dl class="definitie-lijst">
+    <dt>Pluspunt (rekenen)</dt>
+    <dd><%= leerling.niveau_rekenen ? NIVEAUS[leerling.niveau_rekenen].label : '— geen indicatie —' %></dd>
+    <dt>Staal (taal/spelling)</dt>
+    <dd><%= leerling.niveau_taal ? NIVEAUS[leerling.niveau_taal].label : '— geen indicatie —' %></dd>
+    <dt>Blink (wereldoriëntatie)</dt>
+    <dd><%= leerling.niveau_wereldorientatie ? NIVEAUS[leerling.niveau_wereldorientatie].label : '— geen indicatie —' %></dd>
+    <dt>Verjaardag</dt>
+    <dd><%= leerling.verjaardag_dag ? `${leerling.verjaardag_dag}/${leerling.verjaardag_maand}` : '— niet ingevuld —' %></dd>
+  </dl>
+</section>
+
+<section class="kaart">
+  <h2>Snelle notitie</h2>
+  <form action="/leerlingen/<%= leerling.id %>/notities" method="POST" class="formulier">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="tekst" class="sr-only">Notitietekst</label>
+    <textarea id="tekst" name="tekst" rows="2" placeholder="Korte notitie..." required></textarea>
+    <label class="checkbox-label">
+      <input type="checkbox" name="is_aandachtspunt" value="1">
+      Markeer als aandachtspunt (zichtbaar op dashboard)
+    </label>
+    <button type="submit" class="knop knop-primair">Notitie toevoegen</button>
+  </form>
+</section>
+
+<section class="kaart">
+  <h2>Notities</h2>
+  <% if (notities.length === 0) { %>
+    <p class="leeg">Nog geen notities voor <%= leerling.roepnaam %>.</p>
+  <% } else { %>
+    <ul class="notitie-lijst">
+      <% notities.forEach(n => { %>
+        <li class="notitie-item <%= n.is_aandachtspunt ? 'is-aandachtspunt' : '' %>">
+          <div class="notitie-kop">
+            <span class="notitie-datum"><%= n.datum %></span>
+            <% if (n.is_aandachtspunt) { %><span class="badge-aandachtspunt">Aandachtspunt</span><% } %>
+          </div>
+          <p class="notitie-tekst"><%= n.tekst %></p>
+          <div class="notitie-acties">
+            <form action="/notities/<%= n.id %>/aandachtspunt" method="POST" class="inline-form">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="link-knop"><%= n.is_aandachtspunt ? 'Aandachtspunt afhalen' : 'Markeer als aandachtspunt' %></button>
+            </form>
+            <form action="/notities/<%= n.id %>/verwijderen" method="POST" class="inline-form" data-bevestig="Notitie verwijderen?">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="link-knop link-knop-gevaar">Verwijderen</button>
+            </form>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<p><a href="/leerlingen">&larr; Terug naar leerlingenoverzicht</a></p>
+
+<%- include('../partials/footer') %>
