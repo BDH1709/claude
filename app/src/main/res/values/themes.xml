@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fase 0: kaal donker thema zonder AppCompat-afhankelijkheid. -->
+    <style name="Theme.Stilte" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0A1E20</item>
+        <item name="android:statusBarColor">#0A1E20</item>
+        <item name="android:navigationBarColor">#0A1E20</item>
+    </style>
+</resources>

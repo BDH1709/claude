@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Stilte</string>
+    <string name="phase0_label">Stilte — fase 0.\nDit skelet doet nog niets.</string>
+    <string name="phase0_settings">Systeeminstellingen: home-app</string>
+</resources>

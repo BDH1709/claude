@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Geen enkele permissie: fase 0 doet niets en mag niets kunnen. -->
+
+    <application
+        android:label="@string/app_name"
+        android:theme="@style/Theme.Stilte"
+        android:usesCleartextTraffic="false"
+        android:allowBackup="false">
+
+        <!--
+            singleTask + stateNotNeeded + excludeFromRecents: standaard
+            launcher-gedrag. De home-intent-filter maakt deze app kiesbaar
+            als standaard homescreen.
+        -->
+        <activity
+            android:name=".HomeActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
